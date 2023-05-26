@@ -1,0 +1,23 @@
+FROM golang:1.19
+
+ENV GO111MODULE=on
+ENV ADDR=0.0.0.0
+ENV TZ=Asia/Bangkok
+
+RUN mkdir -p /go/src/github.com/Blackmocca/go-lightweight-scheduler
+WORKDIR /go/src/github.com/Blackmocca/go-lightweight-scheduler
+
+# Move to project folder
+WORKDIR /go/src/github.com/Blackmocca/go-lightweight-scheduler
+
+COPY . . 
+RUN go get -u github.com/githubnemo/CompileDaemon
+RUN go install github.com/githubnemo/CompileDaemon
+RUN go mod tidy     
+
+RUN  go build -o  /go/src/github.com/Blackmocca/go-lightweight-scheduler/build/app main.go
+
+EXPOSE 3000
+EXPOSE 3100
+
+ENTRYPOINT CompileDaemon -include=go.mod -log-prefix=false -color=true -build="go build -o ./build/app main.go" -command="./build/app" 

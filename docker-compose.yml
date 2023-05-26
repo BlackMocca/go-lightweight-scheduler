@@ -1,0 +1,43 @@
+version: "3"
+
+services: 
+
+  scheduler-app:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-development
+    container_name: scheduler-app
+    env_file: .env
+    networks: 
+      - default
+    ports:
+      - 3000:3000
+    volumes:
+      - .:/go/src/github.com/Blackmocca/go-lightweight-scheduler
+
+  scheduler-pg-db:
+    image: postgres:15
+    container_name: scheduler-pg-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=admin
+      - POSTGRES_DB=scheduler
+    networks: 
+      - default
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/pg:/var/lib/postgresql/data
+
+  scheduler-adminer:
+    image: adminer
+    container_name: scheduler-adminer
+    networks: 
+      - default
+    ports:
+      - 8081:8080
+
+networks:
+  default:
+    external:
+      name: scheduler
