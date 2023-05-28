@@ -6,6 +6,7 @@ import (
 
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/connection"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/scheduler"
 	"github.com/Blackmocca/go-lightweight-scheduler/middleware"
 	"github.com/Blackmocca/go-lightweight-scheduler/route"
 	"github.com/labstack/echo/v4"
@@ -40,6 +41,14 @@ func main() {
 	e, _, _ := getWebInstance()
 
 	fmt.Println(connection)
+
+	schedulerInstance := scheduler.NewScheduler("*/1 * * * *", "tmp", scheduler.NewDefaultSchedulerConfig())
+	schedulerInstance.RegisterJob(scheduler.NewJob("tmp", nil))
+	schedulerInstance.Start()
+	defer schedulerInstance.Stop()
+	// schedulerInstance.Scheduler.Every(1).Seconds().Do(func() {
+	// 	fmt.Println("test")
+	// })
 
 	port := fmt.Sprintf(":%s", constants.ENV_APP_PORT)
 	e.Logger.Fatal(e.Start(port))
