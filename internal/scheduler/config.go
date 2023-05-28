@@ -23,10 +23,8 @@ type SchedulerConfig struct {
 	RetryDelay          time.Duration
 	JobTimeout          time.Duration
 	JobMode             constants.JobMode
-	onBefore            func(ctx context.Context) error
-	onSuccess           func(ctx context.Context) error
-	onError             func(ctx context.Context) error
-	onAfter             func(ctx context.Context) error
+	OnSuccess           func(ctx context.Context) error
+	OnError             func(ctx context.Context) error
 }
 
 func NewDefaultSchedulerConfig() SchedulerConfig {
@@ -35,9 +33,7 @@ func NewDefaultSchedulerConfig() SchedulerConfig {
 		RetryTimes:          0,
 		RetryDelay:          0,
 		JobMode:             constants.JOB_MODE_CONCURRENT,
-		onBefore:            default_func,
-		onSuccess:           default_func,
-		onError:             default_func,
-		onAfter:             default_func,
+		OnSuccess:           default_func,
+		OnError:             default_func,
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"time"
 
-	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/go-co-op/gocron"
 )
 
@@ -40,17 +39,14 @@ func (s *SchedulerInstance) RegisterJob(jobInstance *JobInstance) error {
 	if jobInstance.GetTotalTask() == 0 {
 		return errors.New("required any task in jobInstance")
 	}
-	job, err := s.Scheduler.Every(1).Second().Do(jobInstance.GetTask(0))
-	// job, err := s.Scheduler.Cron(s.cronExpression).Do(jobInstance.GetTask(0))
+
+	job, err := s.Scheduler.Every(1).Second().Do(jobInstance.onBefore)
+	// job, err := s.Scheduler.Cron(s.cronExpression).Do(jobInstance.onBefore)
 	if err != nil {
 		return err
 	}
 	jobInstance.Job = job
 	jobInstance.SetSchedulerConfig(s.config)
-
-	if s.config.JobMode == constants.JOB_MODE_SIGNLETON {
-		jobInstance.Job.SingletonMode()
-	}
 
 	s.jobInstance = jobInstance
 	s.Scheduler.StartAsync()

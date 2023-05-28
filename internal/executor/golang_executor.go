@@ -2,7 +2,6 @@ package executor
 
 import (
 	"context"
-	"fmt"
 )
 
 type GolangExecuter struct {
@@ -14,6 +13,5 @@ func NewGolangExecuter(fn func(ctx context.Context) error) GolangExecuter {
 }
 
 func (g GolangExecuter) Execute(ctx context.Context) error {
-	fmt.Println("golang Execute")
 	return g.fn(ctx)
 }

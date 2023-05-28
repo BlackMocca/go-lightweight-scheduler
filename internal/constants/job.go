@@ -19,3 +19,9 @@ const (
 	JOB_STATUS_SUCCESS JobStatus = "SUCCESS"
 	JOB_STATUS_ERROR   JobStatus = "ERROR"
 )
+
+type JobContextKey string
+
+const (
+	JOB_RUNNER_INSTANCE_KEY JobContextKey = "instance" // using load current status of job runner
+)
