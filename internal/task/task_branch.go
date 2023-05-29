@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"reflect"
@@ -12,7 +13,7 @@ import (
 )
 
 type TaskBranch struct {
-	taskbase
+	taskbase    `json:",inline"`
 	fn          executor.Execution
 	taskBranchs []TaskBranchPipeLine
 }
@@ -26,6 +27,21 @@ func NewTaskBranch(name string, execution executor.Execution, tasks []TaskBranch
 		fn:          execution,
 		taskBranchs: tasks,
 	}
+}
+
+func (s TaskBranch) MarshalJSON() ([]byte, error) {
+	type ptr struct {
+		TaskType    string              `json:"type"`
+		Name        string              `json:"name"`
+		TaskBranchs TaskBranchPipeLines `json:"task_branchs"`
+	}
+	sh := ptr{
+		TaskType:    string(s.taskbase.taskType),
+		Name:        string(s.taskbase.name),
+		TaskBranchs: s.taskBranchs,
+	}
+	fmt.Println(sh.TaskBranchs)
+	return json.Marshal(sh)
 }
 
 func (t TaskBranch) GetType() constants.TaskType {
@@ -55,6 +71,48 @@ func (t TaskBranch) Call(ctx context.Context) (interface{}, error) {
 type TaskBranchPipeLine struct {
 	name  string
 	tasks []Execution
+}
+
+type TaskBranchPipeLines []TaskBranchPipeLine
+
+func (s TaskBranchPipeLines) MarshalJSON() ([]byte, error) {
+	var ptr = map[string][]map[string]interface{}{}
+	for _, item := range s {
+		if _, ok := ptr[item.name]; !ok {
+			ptr[item.name] = make([]map[string]interface{}, 0)
+		}
+		if item.tasks != nil && len(item.tasks) > 0 {
+			for _, task := range item.tasks {
+				bu, _ := task.MarshalJSON()
+				m := map[string]interface{}{}
+				json.Unmarshal(bu, &m)
+
+				ptr[item.name] = append(ptr[item.name], m)
+			}
+		}
+	}
+	return json.Marshal(ptr)
+}
+
+func (s *TaskBranchPipeLine) MarshalJSON() ([]byte, error) {
+	type ptr struct {
+		Name  string                   `json:"name"`
+		Tasks []map[string]interface{} `json:"tasks"`
+	}
+	var sh = ptr{
+		Name:  s.name,
+		Tasks: make([]map[string]interface{}, 0),
+	}
+	if s.tasks != nil && len(s.tasks) > 0 {
+		for _, task := range s.tasks {
+			bu, _ := task.MarshalJSON()
+			m := map[string]interface{}{}
+			json.Unmarshal(bu, &m)
+
+			sh.Tasks = append(sh.Tasks, m)
+		}
+	}
+	return json.Marshal(sh)
 }
 
 func NewTaskBranchPipeline(pipes map[string][]Execution) []TaskBranchPipeLine {

@@ -34,20 +34,32 @@ func NewScheduler(cronExpression string, name string, config SchedulerConfig) *S
 
 func (s *SchedulerInstance) MarshalJSON() ([]byte, error) {
 	type ptr struct {
-		Name      string                 `json:"name"`
-		Cronjob   string                 `json:"cronjob_expression"`
-		IsRunning bool                   `json:"is_running"`
-		Arguments map[string]interface{} `json:"arguments"`
-		Config    SchedulerConfig        `json:"config"`
+		Name      string                   `json:"name"`
+		Cronjob   string                   `json:"cronjob_expression"`
+		IsRunning bool                     `json:"is_running"`
+		Arguments map[string]interface{}   `json:"arguments"`
+		Config    SchedulerConfig          `json:"config"`
+		Tasks     []map[string]interface{} `json:"tasks"`
 	}
 	var sh = ptr{
 		Name:      s.name,
 		Cronjob:   s.cronExpression,
 		IsRunning: s.Scheduler.IsRunning(),
 		Config:    s.config,
+		Tasks:     make([]map[string]interface{}, 0),
 	}
 	if s.jobInstance != nil {
 		sh.Arguments = s.jobInstance.arguments
+
+		if len(s.jobInstance.tasks) > 0 {
+			for _, task := range s.jobInstance.tasks {
+				bu, _ := task.MarshalJSON()
+				m := map[string]interface{}{}
+				json.Unmarshal(bu, &m)
+
+				sh.Tasks = append(sh.Tasks, m)
+			}
+		}
 	}
 	return json.Marshal(sh)
 }

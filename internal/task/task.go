@@ -2,14 +2,15 @@ package task
 
 import (
 	"context"
+	"encoding/json"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/executor"
 )
 
 type Task struct {
-	taskbase
-	fn executor.Execution
+	taskbase `json:",inline"`
+	fn       executor.Execution `json:"-"`
 }
 
 func NewTask(name string, execution executor.Execution) Execution {
@@ -20,6 +21,10 @@ func NewTask(name string, execution executor.Execution) Execution {
 		},
 		fn: execution,
 	}
+}
+
+func (s Task) MarshalJSON() ([]byte, error) {
+	return json.Marshal(s.taskbase)
 }
 
 func (t Task) GetType() constants.TaskType {
