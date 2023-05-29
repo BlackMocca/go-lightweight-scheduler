@@ -1,25 +1,25 @@
 package dag
 
 import (
-	"fmt"
-
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/scheduler"
 )
 
+var (
+	SCHEDULERS = make([]*scheduler.SchedulerInstance, 0)
+)
+
 func StartAllDag(stop chan bool) {
-	schedulers := []*scheduler.SchedulerInstance{}
 	if constants.ENV_ENABLED_DAG_EXAMPLE {
-		schedulers = append(schedulers,
+		SCHEDULERS = append(SCHEDULERS,
 			startDagExampleGolang(),
 			startDagExampleTaskBranch(),
 			startDagExampleTaskBash(),
 		)
 	}
 
-	for _, scheduler := range schedulers {
+	for _, scheduler := range SCHEDULERS {
 		scheduler.Start()
-		fmt.Println("start scheduler:", scheduler.GetCronjobExpression(), scheduler.GetName())
 		defer scheduler.Stop()
 	}
 	<-stop

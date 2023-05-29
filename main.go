@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/dag"
 	_ "github.com/Blackmocca/go-lightweight-scheduler/dag"
@@ -29,7 +33,7 @@ func getWebInstance() (*echo.Echo, middleware.RestAPIMiddleware, *route.Route) {
 }
 
 func main() {
-	// ctx := context.Background()
+	ctx := context.Background()
 
 	// connection, err := connection.GetDatabaseConnection(ctx, constants.AdapterDatabaseConnectionType(constants.ENV_DATABASE_ADAPTER), constants.ENV_DATABASE_URL)
 	// if err != nil {
@@ -47,8 +51,18 @@ func main() {
 	}()
 
 	stop := make(chan bool)
-	defer func() {
-		stop <- true
-	}()
-	dag.StartAllDag(stop)
+	go dag.StartAllDag(stop)
+
+	signalCh := make(chan os.Signal, 1)
+	signal.Notify(signalCh, os.Interrupt, os.Kill, syscall.SIGTERM)
+
+	// graceful shutdown
+	<-signalCh
+	fmt.Println("cancel application")
+
+	e.Shutdown(ctx)
+	fmt.Println("shutdown web service")
+
+	stop <- true
+	fmt.Println("shutdown scheduler")
 }

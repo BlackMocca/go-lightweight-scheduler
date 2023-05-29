@@ -27,3 +27,4 @@ tmp/*
 cover.out
 coverage.html
 data/*
+logs/*

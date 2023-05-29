@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/logger"
 	"github.com/go-co-op/gocron"
 )
 
@@ -13,6 +15,7 @@ type SchedulerInstance struct {
 	name           string
 	jobInstance    *JobInstance
 	config         SchedulerConfig
+	logger         *logger.Log
 }
 
 func NewScheduler(cronExpression string, name string, config SchedulerConfig) *SchedulerInstance {
@@ -24,6 +27,7 @@ func NewScheduler(cronExpression string, name string, config SchedulerConfig) *S
 		name:           name,
 		cronExpression: cronExpression,
 		config:         config,
+		logger:         logger.NewLoggerWithFile(constants.LOG_PATH_SCHEDULER),
 	}
 }
 
@@ -37,10 +41,17 @@ func (s SchedulerInstance) GetCronjobExpression() string {
 
 func (s SchedulerInstance) Start() {
 	s.Scheduler.StartAsync()
+	s.logger.Info("start scheduler", map[string]interface{}{
+		"scheduler_cronjob_expression": s.cronExpression,
+		"scheduler_name":               s.name,
+	})
 }
 
 func (s SchedulerInstance) Stop() {
 	s.Scheduler.Stop()
+	s.logger.Info("stop scheduler", map[string]interface{}{
+		"scheduler_name": s.name,
+	})
 }
 
 func (s *SchedulerInstance) RegisterJob(jobInstance *JobInstance) error {
