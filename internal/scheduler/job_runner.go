@@ -152,7 +152,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 			jr.exception = err
 			taskResult.status = constants.JOB_STATUS_ERROR
 			jr.taskResults[index] = taskResult
-			jr.logger.Error(fmt.Sprintf("scheduler %s with ending task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
+			jr.logger.Error(err, map[string]interface{}{"task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
 			return
 		}
 		taskResult.status = constants.JOB_STATUS_SUCCESS

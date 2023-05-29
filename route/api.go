@@ -4,6 +4,8 @@ import (
 	"net/http"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/middleware"
+	"github.com/Blackmocca/go-lightweight-scheduler/service/v1/schedule"
+	_schedule_validator "github.com/Blackmocca/go-lightweight-scheduler/service/v1/schedule/validator"
 	"github.com/labstack/echo/v4"
 )
 
@@ -22,4 +24,9 @@ func (r Route) RegisterHealthcheck() {
 			"status": "ok",
 		})
 	})
+}
+
+func (r Route) RegisterSchedule(handler schedule.HttpHandler, validation _schedule_validator.Validation) {
+	r.e.GET("/v1/schedulers", handler.GetListSchedule)
+	r.e.GET("/v1/scheduler/:name", handler.GetOneSchedule)
 }

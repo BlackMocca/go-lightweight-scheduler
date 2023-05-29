@@ -12,6 +12,8 @@ import (
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/middleware"
 	"github.com/Blackmocca/go-lightweight-scheduler/route"
+	_schedule_handler "github.com/Blackmocca/go-lightweight-scheduler/service/v1/schedule/http"
+	_schedule_validator "github.com/Blackmocca/go-lightweight-scheduler/service/v1/schedule/validator"
 	"github.com/labstack/echo/v4"
 	echoMiddL "github.com/labstack/echo/v4/middleware"
 )
@@ -29,6 +31,9 @@ func getWebInstance() (*echo.Echo, middleware.RestAPIMiddleware, *route.Route) {
 	router := route.NewRoute(e, middL)
 	router.RegisterHealthcheck()
 
+	schedulHandler := _schedule_handler.NewScheduleHandler()
+	router.RegisterSchedule(schedulHandler, _schedule_validator.Validation{})
+
 	return e, middL, router
 }
 
@@ -42,8 +47,6 @@ func main() {
 	// defer connection.Close(ctx)
 
 	e, _, _ := getWebInstance()
-
-	// fmt.Println(connection)
 
 	go func() {
 		port := fmt.Sprintf(":%s", constants.ENV_APP_PORT)

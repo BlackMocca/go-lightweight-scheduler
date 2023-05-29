@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -29,6 +30,26 @@ func NewScheduler(cronExpression string, name string, config SchedulerConfig) *S
 		config:         config,
 		logger:         logger.NewLoggerWithFile(constants.LOG_PATH_SCHEDULER),
 	}
+}
+
+func (s *SchedulerInstance) MarshalJSON() ([]byte, error) {
+	type ptr struct {
+		Name      string                 `json:"name"`
+		Cronjob   string                 `json:"cronjob_expression"`
+		IsRunning bool                   `json:"is_running"`
+		Arguments map[string]interface{} `json:"arguments"`
+		Config    SchedulerConfig        `json:"config"`
+	}
+	var sh = ptr{
+		Name:      s.name,
+		Cronjob:   s.cronExpression,
+		IsRunning: s.Scheduler.IsRunning(),
+		Config:    s.config,
+	}
+	if s.jobInstance != nil {
+		sh.Arguments = s.jobInstance.arguments
+	}
+	return json.Marshal(sh)
 }
 
 func (s SchedulerInstance) GetName() string {
@@ -65,8 +86,7 @@ func (s *SchedulerInstance) RegisterJob(jobInstance *JobInstance) error {
 		return err
 	}
 	jobInstance.Job = job
-	jobInstance.schedulerName = s.name
-	jobInstance.SetSchedulerConfig(s.config)
+	jobInstance.SetScheduler(s.name, s.config)
 
 	s.jobInstance = jobInstance
 	return nil
