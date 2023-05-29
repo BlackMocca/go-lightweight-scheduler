@@ -10,33 +10,45 @@ import (
 	"github.com/gofrs/uuid"
 )
 
-type JobRunner struct {
-	id               string
-	ctx              context.Context
-	ji               *JobInstance
-	status           constants.JobStatus
-	currentTaskIndex int
-	exception        error
-	executeDatetime  time.Time
-	arguments        *sync.Map
-	parameter        *sync.Map
+type JobRunner interface {
+	GetId() string
+	GetStatus() constants.JobStatus
+	GetTask() task.Execution
+	GetException() error
+	GetExecuteDatetime() time.Time
+	GetArguments() *sync.Map
+	GetParameter() *sync.Map
+	GetTaskValue(taskName string) (data interface{}, ok bool)
 }
 
-func newJobRunner(ctx context.Context, ji *JobInstance) *JobRunner {
+type jobRunner struct {
+	id                  string
+	ctx                 context.Context
+	tasks               []task.Execution
+	status              constants.JobStatus
+	currentTaskIndex    int
+	exceptionOnTaskName string
+	exception           error
+	executeDatetime     time.Time
+	arguments           *sync.Map
+	parameter           *sync.Map
+	taskValue           *sync.Map
+}
+
+func newJobRunner(ctx context.Context, ji *JobInstance) *jobRunner {
 	uid, _ := uuid.NewV4()
-	runner := &JobRunner{
+	runner := &jobRunner{
 		id:               uid.String(),
 		ctx:              ctx,
-		ji:               ji,
+		tasks:            ji.tasks,
 		status:           constants.JOB_STATUS_RUNNING,
 		currentTaskIndex: 0,
 		executeDatetime:  time.Now().UTC(),
 		arguments:        new(sync.Map),
 		parameter:        new(sync.Map),
+		taskValue:        new(sync.Map),
 	}
 
-	ctx = context.WithValue(ctx, constants.JOB_RUNNER_INSTANCE_KEY, runner)
-	runner.ctx = ctx
 	if ji.arguments != nil {
 		for k, v := range ji.arguments {
 			runner.arguments.Store(k, v)
@@ -46,35 +58,43 @@ func newJobRunner(ctx context.Context, ji *JobInstance) *JobRunner {
 	return runner
 }
 
-func (jr JobRunner) GetId() string {
+func (jr *jobRunner) getRunnerInterface() JobRunner {
+	return jr
+}
+
+func (jr jobRunner) GetId() string {
 	return jr.id
 }
 
-func (jr JobRunner) GetStatus() constants.JobStatus {
+func (jr jobRunner) GetStatus() constants.JobStatus {
 	return jr.status
 }
 
-func (jr JobRunner) GetTask() task.Execution {
-	return jr.ji.tasks[jr.currentTaskIndex]
+func (jr jobRunner) GetTask() task.Execution {
+	return jr.tasks[jr.currentTaskIndex]
 }
 
-func (jr JobRunner) GetException() error {
+func (jr jobRunner) GetException() error {
 	return jr.exception
 }
 
-func (jr JobRunner) GetExecuteDatetime() time.Time {
+func (jr jobRunner) GetExecuteDatetime() time.Time {
 	return jr.executeDatetime
 }
 
-func (jr JobRunner) GetArguments() *sync.Map {
+func (jr jobRunner) GetArguments() *sync.Map {
 	return jr.arguments
 }
 
-func (jr JobRunner) GetParameter() *sync.Map {
+func (jr jobRunner) GetParameter() *sync.Map {
 	return jr.parameter
 }
 
-func (jr *JobRunner) run() {
+func (jr jobRunner) GetTaskValue(taskName string) (data interface{}, ok bool) {
+	return jr.taskValue.Load(taskName)
+}
+
+func (jr *jobRunner) run(tasks []task.Execution) {
 	defer func() {
 		if r := recover(); r != nil {
 			jr.exception = r.(error)
@@ -87,13 +107,34 @@ func (jr *JobRunner) run() {
 		}
 	}()
 
-	for index, task := range jr.ji.tasks {
+	jr.tasks = tasks
+	jr.currentTaskIndex = 0
+	for index, taskExecution := range tasks {
 		jr.currentTaskIndex = index
-		if err := task.Call(jr.ctx); err != nil {
+		value, err := taskExecution.Call(jr.ctx)
+		if err != nil {
+			jr.exceptionOnTaskName = taskExecution.GetName()
 			jr.exception = err
+			return
+		}
+		jr.taskValue.Store(taskExecution.GetName(), value)
+
+		switch taskExecution.GetType() {
+		case constants.TASK_TYPE_BRANCH_TASK:
+			val := value.(task.TaskBranchPipeLine)
+			tasks := val.GetTasks()
+			jr.run(tasks)
 			return
 		}
 	}
 
 	jr.status = constants.JOB_STATUS_SUCCESS
+}
+
+func (jr *jobRunner) clear() {
+	jr.arguments = nil
+	jr.parameter = nil
+	jr.exception = nil
+	jr.taskValue = nil
+	jr.tasks = nil
 }

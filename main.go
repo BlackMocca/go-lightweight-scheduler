@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/Blackmocca/go-lightweight-scheduler/dag"
+	_ "github.com/Blackmocca/go-lightweight-scheduler/dag"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/connection"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/middleware"
@@ -41,6 +43,14 @@ func main() {
 
 	fmt.Println(connection)
 
-	port := fmt.Sprintf(":%s", constants.ENV_APP_PORT)
-	e.Logger.Fatal(e.Start(port))
+	go func() {
+		port := fmt.Sprintf(":%s", constants.ENV_APP_PORT)
+		e.Logger.Fatal(e.Start(port))
+	}()
+
+	stop := make(chan bool)
+	defer func() {
+		stop <- true
+	}()
+	dag.StartAllDag(stop)
 }

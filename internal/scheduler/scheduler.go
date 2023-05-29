@@ -40,15 +40,15 @@ func (s *SchedulerInstance) RegisterJob(jobInstance *JobInstance) error {
 		return errors.New("required any task in jobInstance")
 	}
 
-	job, err := s.Scheduler.Every(1).Second().Do(jobInstance.onBefore)
-	// job, err := s.Scheduler.Cron(s.cronExpression).Do(jobInstance.onBefore)
+	// job, err := s.Scheduler.Every(1).Second().Do(jobInstance.onBefore)
+	job, err := s.Scheduler.Cron(s.cronExpression).Do(jobInstance.onBefore)
 	if err != nil {
 		return err
 	}
 	jobInstance.Job = job
+	jobInstance.schedulerName = s.name
 	jobInstance.SetSchedulerConfig(s.config)
 
 	s.jobInstance = jobInstance
-	s.Scheduler.StartAsync()
 	return nil
 }

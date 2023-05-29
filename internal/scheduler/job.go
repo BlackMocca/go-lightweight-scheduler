@@ -2,10 +2,12 @@ package scheduler
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/task"
 	"github.com/go-co-op/gocron"
+	"github.com/sirupsen/logrus"
 )
 
 type JobInstance struct {
@@ -14,6 +16,7 @@ type JobInstance struct {
 	arguments       map[string]interface{}
 	status          string
 	totalTask       int
+	schedulerName   string
 	schedulerConfig SchedulerConfig // will be get config after register job
 }
 
@@ -50,15 +53,19 @@ func (j *JobInstance) SetSchedulerConfig(config SchedulerConfig) {
 	}
 }
 
-// Override On Before
 func (j *JobInstance) onBefore() {
 	// ctx := j.Job.Context()
-	runner := newJobRunner(context.Background(), j)
+	ctx := context.Background()
+	runner := newJobRunner(ctx, j)
+	ctx = context.WithValue(ctx, constants.JOB_RUNNER_INSTANCE_KEY, runner.getRunnerInterface())
+	runner.ctx = ctx
 
-	runner.run()
+	defer runner.clear()
+	runner.run(runner.tasks)
 	if runner.exception != nil {
 		/* case error */
 		j.schedulerConfig.OnError(runner.ctx)
+		logrus.Error(fmt.Errorf("error: scheduler on %s.%s with message %s", j.schedulerName, runner.GetTask().GetName(), runner.exception.Error()))
 		return
 	}
 

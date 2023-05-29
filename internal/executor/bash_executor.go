@@ -14,6 +14,6 @@ func NewBashExecutor(cmd string, args []string) Execution {
 	}
 }
 
-func (b BashExecutor) Execute(ctx context.Context) error {
-	return nil
+func (b BashExecutor) Execute(ctx context.Context) (interface{}, error) {
+	return nil, nil
 }
