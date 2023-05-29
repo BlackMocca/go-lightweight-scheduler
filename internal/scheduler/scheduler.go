@@ -16,7 +16,7 @@ type SchedulerInstance struct {
 }
 
 func NewScheduler(cronExpression string, name string, config SchedulerConfig) *SchedulerInstance {
-	scheduler := gocron.NewScheduler(time.UTC)
+	scheduler := gocron.NewScheduler(time.Local)
 	scheduler.SetMaxConcurrentJobs(config.MaxActiveConcurrent, gocron.WaitMode)
 
 	return &SchedulerInstance{
