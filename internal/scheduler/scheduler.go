@@ -34,12 +34,15 @@ func NewScheduler(cronExpression string, name string, config SchedulerConfig) *S
 
 func (s *SchedulerInstance) MarshalJSON() ([]byte, error) {
 	type ptr struct {
-		Name      string                   `json:"name"`
-		Cronjob   string                   `json:"cronjob_expression"`
-		IsRunning bool                     `json:"is_running"`
-		Arguments map[string]interface{}   `json:"arguments"`
-		Config    SchedulerConfig          `json:"config"`
-		Tasks     []map[string]interface{} `json:"tasks"`
+		Name        string                   `json:"name"`
+		Cronjob     string                   `json:"cronjob_expression"`
+		IsRunning   bool                     `json:"is_running"`
+		Arguments   map[string]interface{}   `json:"arguments"`
+		LastRun     string                   `json:"last_run"`
+		NextRun     string                   `json:"next_run"`
+		PreviousRun string                   `json:"previous_run"`
+		Config      SchedulerConfig          `json:"config"`
+		Tasks       []map[string]interface{} `json:"tasks"`
 	}
 	var sh = ptr{
 		Name:      s.name,
@@ -50,7 +53,11 @@ func (s *SchedulerInstance) MarshalJSON() ([]byte, error) {
 	}
 	if s.jobInstance != nil {
 		sh.Arguments = s.jobInstance.arguments
-
+		if s.jobInstance.Job != nil {
+			sh.NextRun = s.jobInstance.Job.NextRun().Format(constants.TIME_FORMAT_RFC339)
+			sh.LastRun = s.jobInstance.Job.LastRun().Format(constants.TIME_FORMAT_RFC339)
+			sh.PreviousRun = s.jobInstance.Job.PreviousRun().Format(constants.TIME_FORMAT_RFC339)
+		}
 		if len(s.jobInstance.tasks) > 0 {
 			for _, task := range s.jobInstance.tasks {
 				bu, _ := task.MarshalJSON()

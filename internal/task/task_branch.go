@@ -40,7 +40,6 @@ func (s TaskBranch) MarshalJSON() ([]byte, error) {
 		Name:        string(s.taskbase.name),
 		TaskBranchs: s.taskBranchs,
 	}
-	fmt.Println(sh.TaskBranchs)
 	return json.Marshal(sh)
 }
 
