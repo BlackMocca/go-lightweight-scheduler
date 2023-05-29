@@ -1,12 +1,10 @@
 package main
 
 import (
-	"context"
 	"fmt"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/dag"
 	_ "github.com/Blackmocca/go-lightweight-scheduler/dag"
-	"github.com/Blackmocca/go-lightweight-scheduler/internal/connection"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/middleware"
 	"github.com/Blackmocca/go-lightweight-scheduler/route"
@@ -31,17 +29,17 @@ func getWebInstance() (*echo.Echo, middleware.RestAPIMiddleware, *route.Route) {
 }
 
 func main() {
-	ctx := context.Background()
+	// ctx := context.Background()
 
-	connection, err := connection.GetDatabaseConnection(ctx, constants.AdapterDatabaseConnectionType(constants.ENV_DATABASE_ADAPTER), constants.ENV_DATABASE_URL)
-	if err != nil {
-		panic(err)
-	}
-	defer connection.Close(ctx)
+	// connection, err := connection.GetDatabaseConnection(ctx, constants.AdapterDatabaseConnectionType(constants.ENV_DATABASE_ADAPTER), constants.ENV_DATABASE_URL)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// defer connection.Close(ctx)
 
 	e, _, _ := getWebInstance()
 
-	fmt.Println(connection)
+	// fmt.Println(connection)
 
 	go func() {
 		port := fmt.Sprintf(":%s", constants.ENV_APP_PORT)

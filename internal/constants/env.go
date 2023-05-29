@@ -1,6 +1,10 @@
 package constants
 
-import "os"
+import (
+	"os"
+
+	"github.com/spf13/cast"
+)
 
 func getEnv(key string, defaultValue string) string {
 	val, exists := os.LookupEnv(key)
@@ -11,7 +15,8 @@ func getEnv(key string, defaultValue string) string {
 }
 
 var (
-	ENV_APP_PORT         = getEnv("APP_PORT", "3000")
-	ENV_DATABASE_ADAPTER = getEnv("DATABASE_ADAPTER", "postgres")
-	ENV_DATABASE_URL     = getEnv("DATABASE_URL", "")
+	ENV_APP_PORT            = getEnv("APP_PORT", "3000")
+	ENV_DATABASE_ADAPTER    = getEnv("DATABASE_ADAPTER", "postgres")
+	ENV_DATABASE_URL        = getEnv("DATABASE_URL", "")
+	ENV_ENABLED_DAG_EXAMPLE = cast.ToBool(getEnv("ENABLED_DAG_EXAMPLE", "true"))
 )

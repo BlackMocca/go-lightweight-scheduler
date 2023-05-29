@@ -1,19 +1,32 @@
 package executor
 
-import "context"
+import (
+	"context"
+	"fmt"
+	"os/exec"
+)
 
 type BashExecutor struct {
-	cmd  string
-	args []string
+	cmd        string
+	showResult bool
 }
 
-func NewBashExecutor(cmd string, args []string) Execution {
+func NewBashExecutor(cmd string, showResult bool) Execution {
 	return &BashExecutor{
-		cmd:  cmd,
-		args: args,
+		cmd:        cmd,
+		showResult: showResult,
 	}
 }
 
 func (b BashExecutor) Execute(ctx context.Context) (interface{}, error) {
-	return nil, nil
+	cmd := exec.Command("bash", "-c", b.cmd)
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	if b.showResult {
+		fmt.Println(cmd.String())
+		fmt.Println(string(output))
+	}
+	return string(output), nil
 }

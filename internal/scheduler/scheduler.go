@@ -27,6 +27,14 @@ func NewScheduler(cronExpression string, name string, config SchedulerConfig) *S
 	}
 }
 
+func (s SchedulerInstance) GetName() string {
+	return s.name
+}
+
+func (s SchedulerInstance) GetCronjobExpression() string {
+	return s.cronExpression
+}
+
 func (s SchedulerInstance) Start() {
 	s.Scheduler.StartAsync()
 }

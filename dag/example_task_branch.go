@@ -40,9 +40,9 @@ func taskConsiderStack(ctx context.Context) (interface{}, error) {
 	return "branch3.1", nil
 }
 
-func startDagTaskBranch() *scheduler.SchedulerInstance {
+func startDagExampleTaskBranch() *scheduler.SchedulerInstance {
 	config := scheduler.NewDefaultSchedulerConfig()
-	schedulerInstance := scheduler.NewScheduler("*/1 * * * *", "tmp", config)
+	schedulerInstance := scheduler.NewScheduler("*/1 * * * *", "example_task_branch", config)
 
 	job := scheduler.NewJob(nil)
 	job.AddTask(
