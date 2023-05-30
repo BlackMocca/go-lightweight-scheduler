@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/spf13/cast"
 	"github.com/xeipuuv/gojsonschema"
 )
 
@@ -38,6 +39,7 @@ func (v Validation) toMap(results []gojsonschema.ResultError) map[string]interfa
 		field := item.Field()
 		if field == "(root)" {
 			field = ""
+			field = cast.ToString(item.Details()["property"])
 		}
 
 		m["errors"] = append(m["errors"].([]interface{}), []interface{}{

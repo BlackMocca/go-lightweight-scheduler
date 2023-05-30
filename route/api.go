@@ -12,10 +12,14 @@ import (
 type Route struct {
 	e     *echo.Echo
 	middl middleware.RestAPIMiddleware
+	auth  *echo.Group
 }
 
 func NewRoute(e *echo.Echo, middl middleware.RestAPIMiddleware) *Route {
-	return &Route{e: e, middl: middl}
+	auth := e.Group("")
+	auth.Use(middl.Authorization)
+
+	return &Route{e: e, middl: middl, auth: auth}
 }
 
 func (r Route) RegisterHealthcheck() {
@@ -27,7 +31,7 @@ func (r Route) RegisterHealthcheck() {
 }
 
 func (r Route) RegisterSchedule(handler schedule.HttpHandler, validation _schedule_validator.Validation) {
-	r.e.GET("/v1/schedulers", handler.GetListSchedule)
-	r.e.GET("/v1/scheduler/:name", handler.GetOneSchedule)
-	r.e.POST("/v1/scheduler/triggers", handler.Trigger, validation.ValidateTrigger)
+	r.auth.GET("/v1/schedulers", handler.GetListSchedule)
+	r.auth.GET("/v1/scheduler/:name", handler.GetOneSchedule)
+	r.auth.POST("/v1/scheduler/triggers", handler.Trigger, validation.ValidateTrigger)
 }

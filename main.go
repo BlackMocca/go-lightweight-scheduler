@@ -19,7 +19,14 @@ import (
 )
 
 func getWebInstance() (*echo.Echo, middleware.RestAPIMiddleware, *route.Route) {
-	middL := middleware.NewRestAPIMiddleware()
+	headerAuthConfig := middleware.NewAuthorizatonHeaderConfig(
+		constants.ENV_API_AUTH_ADAPTER,
+		constants.ENV_API_AUTH_BASIC_AUTH_USERNAME,
+		constants.ENV_API_AUTH_BASIC_AUTH_PASSWORD,
+		constants.ENV_API_AUTH_API_KEY_NAME,
+		constants.ENV_API_AUTH_API_KEY_VALUE,
+	)
+	middL := middleware.NewRestAPIMiddleware(headerAuthConfig)
 
 	e := echo.New()
 	e.Use(echoMiddL.Logger())
