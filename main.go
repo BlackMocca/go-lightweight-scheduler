@@ -32,7 +32,7 @@ func getWebInstance() (*echo.Echo, middleware.RestAPIMiddleware, *route.Route) {
 	router.RegisterHealthcheck()
 
 	schedulHandler := _schedule_handler.NewScheduleHandler()
-	router.RegisterSchedule(schedulHandler, _schedule_validator.Validation{})
+	router.RegisterSchedule(schedulHandler, _schedule_validator.NewValidation())
 
 	return e, middL, router
 }

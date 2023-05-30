@@ -71,8 +71,7 @@ func (sh scheduleHandler) Trigger(c echo.Context) error {
 	jobId := schedule.Run(triggerConfig, executeDatetime)
 
 	resp := map[string]interface{}{
-		"scheduler": schedule,
-		"jobId":     jobId,
+		"jobId": jobId,
 	}
 	return c.JSON(http.StatusOK, resp)
 }
