@@ -2,7 +2,6 @@ package dag
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
@@ -17,7 +16,7 @@ func startDagExampleGolang() *scheduler.SchedulerInstance {
 		fmt.Println("on error")
 		val := ctx.Value(constants.JOB_RUNNER_INSTANCE_KEY)
 		jobRunner := val.(scheduler.JobRunner)
-		fmt.Println(jobRunner.GetTask().GetName())
+		fmt.Println("task", jobRunner.GetTask().GetName(), "with exception", jobRunner.GetException().(scheduler.Exception).Error())
 		return nil
 	}
 	config.OnSuccess = func(ctx context.Context) error {
@@ -40,12 +39,22 @@ func startDagExampleGolang() *scheduler.SchedulerInstance {
 
 		parameter := jobRunner.GetParameter()
 		parameter.Store("test", "bye")
+
 		return nil, nil
 	})))
 	job.AddTask(task.NewTask("testfoo2", executor.NewGolangExecuter(func(ctx context.Context) (interface{}, error) {
 		fmt.Println("this is foo2")
+		val := ctx.Value(constants.JOB_RUNNER_INSTANCE_KEY)
+		jobRunner := val.(scheduler.JobRunner)
 
-		return nil, errors.New("error test foo2")
+		arguments := jobRunner.GetArguments()
+		parameter := jobRunner.GetParameter()
+		triggerConfig := jobRunner.GetTriggerConfig()
+		fmt.Println("arguments", arguments)
+		fmt.Println("parameter", parameter)
+		fmt.Println("triggerconfig", triggerConfig)
+
+		return nil, nil
 	})))
 
 	schedulerInstance.RegisterJob(job)

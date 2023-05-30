@@ -15,6 +15,7 @@ const (
 type JobStatus string
 
 const (
+	JOB_STATUS_WAITING JobStatus = "WAITING"
 	JOB_STATUS_RUNNING JobStatus = "RUNNING"
 	JOB_STATUS_SUCCESS JobStatus = "SUCCESS"
 	JOB_STATUS_ERROR   JobStatus = "ERROR"

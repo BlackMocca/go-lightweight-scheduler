@@ -3,6 +3,8 @@ package scheduler
 import (
 	"context"
 	"fmt"
+	"sync"
+	"time"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/logger"
@@ -13,12 +15,13 @@ import (
 type JobInstance struct {
 	Job             *gocron.Job
 	tasks           []task.Execution
-	arguments       map[string]interface{}
+	arguments       map[string]interface{} // kargs of any process
 	status          string
 	totalTask       int
 	schedulerName   string
 	schedulerConfig SchedulerConfig // will be get config after register job
 	logger          *logger.Log
+	triggerConfig   *sync.Map
 }
 
 func NewJob(arguments map[string]interface{}) *JobInstance {
@@ -56,13 +59,17 @@ func (j *JobInstance) SetScheduler(schedulerName string, config SchedulerConfig)
 	j.logger = logger.NewLoggerWithFile(constants.LOG_PATH_RESULT_JOB(schedulerName))
 }
 
-func (j *JobInstance) onBefore() {
-	// ctx := j.Job.Context()
+func (j *JobInstance) trigger(triggerConfig *sync.Map, executeDatetime *time.Time) (jobId string, fn func()) {
 	ctx := context.Background()
-	runner := newJobRunner(ctx, j)
+	runner := newJobRunner(ctx, j, triggerConfig, executeDatetime)
 	ctx = context.WithValue(ctx, constants.JOB_RUNNER_INSTANCE_KEY, runner.getRunnerInterface())
 	runner.ctx = ctx
+	return runner.id, func() {
+		j.process(runner)
+	}
+}
 
+func (j *JobInstance) process(runner *jobRunner) {
 	defer runner.clear()
 	runner.run(runner.tasks)
 	if runner.exception != nil {

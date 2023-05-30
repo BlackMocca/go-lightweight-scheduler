@@ -3,6 +3,7 @@ package scheduler
 import (
 	"encoding/json"
 	"errors"
+	"sync"
 	"time"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
@@ -98,15 +99,33 @@ func (s *SchedulerInstance) RegisterJob(jobInstance *JobInstance) error {
 	if jobInstance.GetTotalTask() == 0 {
 		return errors.New("required any task in jobInstance")
 	}
+	jobInstance.SetScheduler(s.name, s.config)
 
-	// job, err := s.Scheduler.Every(1).Second().Do(jobInstance.onBefore)
-	job, err := s.Scheduler.Cron(s.cronExpression).Do(jobInstance.onBefore)
+	_, fn := jobInstance.trigger(nil, nil)
+	job, err := s.Scheduler.Cron(s.cronExpression).Do(fn)
 	if err != nil {
 		return err
 	}
-	jobInstance.Job = job
-	jobInstance.SetScheduler(s.name, s.config)
 
+	jobInstance.Job = job
 	s.jobInstance = jobInstance
 	return nil
+}
+
+func (s *SchedulerInstance) Run(triggerConfig *sync.Map, triggerTime time.Time) string {
+	/* ตั้งเวลาล่วงหน้า */
+	if triggerTime != (time.Time{}) && triggerTime.Sub(time.Now()) > 0 {
+		duration := triggerTime.Sub(time.Now())
+		jobId, fn := s.jobInstance.trigger(triggerConfig, &triggerTime)
+
+		go func(duration time.Duration, call func()) {
+			time.Sleep(duration)
+			fn()
+		}(duration, fn)
+		return jobId
+	}
+	/* run ทันที */
+	jobId, fn := s.jobInstance.trigger(triggerConfig, nil)
+	go fn()
+	return jobId
 }
