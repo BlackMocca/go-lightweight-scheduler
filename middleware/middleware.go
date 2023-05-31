@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/joncalhoun/qson"
 	"github.com/labstack/echo/v4"
 )
@@ -17,13 +18,27 @@ import (
 type RestAPIMiddleware interface {
 	InitContext(next echo.HandlerFunc) echo.HandlerFunc
 	InputForm(next echo.HandlerFunc) echo.HandlerFunc
+	Authorization(next echo.HandlerFunc) echo.HandlerFunc
 }
 
 type restAPIMiddlewareServer struct {
+	authHeaderConfig authorizationHeaderConfig
 }
 
-func NewRestAPIMiddleware() RestAPIMiddleware {
-	return &restAPIMiddlewareServer{}
+type authorizationHeaderConfig struct {
+	adapter     constants.AuthAdapter
+	username    string
+	password    string
+	apikeyName  string
+	apikeyValue string
+}
+
+func NewRestAPIMiddleware(config authorizationHeaderConfig) RestAPIMiddleware {
+	return &restAPIMiddlewareServer{authHeaderConfig: config}
+}
+
+func NewAuthorizatonHeaderConfig(adapter, username, password, apikeyName, apikeyValue string) authorizationHeaderConfig {
+	return authorizationHeaderConfig{adapter: constants.AuthAdapter(adapter), username: username, password: password, apikeyName: apikeyName, apikeyValue: apikeyValue}
 }
 
 func (m *restAPIMiddlewareServer) InputForm(next echo.HandlerFunc) echo.HandlerFunc {

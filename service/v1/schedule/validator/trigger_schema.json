@@ -1,0 +1,25 @@
+{
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9\\-\\_]+$"
+        },
+        "execute_datetime": {
+            "type": "string",
+            "format": "date-time",
+            "pattern": "[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\+07:00"
+        },
+        "config": {
+            "type": [
+                "object",
+                "null"
+            ]
+        }
+    },
+    "required": [
+        "name",
+        "execute_datetime",
+        "config"
+    ]
+}

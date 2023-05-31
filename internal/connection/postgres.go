@@ -5,6 +5,9 @@ import (
 	"fmt"
 
 	"github.com/BlackMocca/sqlx"
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
+	"github.com/Blackmocca/go-lightweight-scheduler/service/v1/schedule"
+	"github.com/Blackmocca/go-lightweight-scheduler/service/v1/schedule/repository"
 	pg "github.com/lib/pq"
 )
 
@@ -16,6 +19,7 @@ type PGClient struct {
 	db            *sqlx.DB
 	connectionURI string
 	driverName    string
+	repository    schedule.Repository
 }
 
 func NewPsqlConnection(ctx context.Context, connectionStr string) (*PGClient, error) {
@@ -39,6 +43,7 @@ func NewPsqlConnection(ctx context.Context, connectionStr string) (*PGClient, er
 		return nil, fmt.Errorf("can't connect database with connection string: %s", connectionStr)
 	}
 
+	client.repository = repository.NewPsqlRepository(client.db)
 	return client, nil
 }
 
@@ -48,6 +53,14 @@ func (c *PGClient) GetClient() interface{} {
 
 func (c *PGClient) GetConnectionURI() string {
 	return c.connectionURI
+}
+
+func (c *PGClient) GetDatabaseType() constants.AdapterDatabaseConnectionType {
+	return constants.ADAPTER_DATABASE_POSTGRES
+}
+
+func (c *PGClient) GetRepository() schedule.Repository {
+	return c.repository
 }
 
 func (c *PGClient) SetClient(ctx context.Context, db interface{}) {

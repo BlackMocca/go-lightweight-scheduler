@@ -1,0 +1,8 @@
+DROP INDEX IF EXISTS idx_trigger_schedule;
+DROP INDEX IF EXISTS idx_trigger_job_id;
+DROP INDEX IF EXISTS idx_trigger_type;
+
+
+DROP TABLE triggers;
+
+DROP TYPE IF EXISTS TRIGGER_TYPE;

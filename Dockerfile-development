@@ -1,5 +1,9 @@
 FROM golang:1.19
 
+RUN wget https://github.com/BlackMocca/migrate/releases/download/v5.3/migrate.linux-amd64
+RUN mv migrate.linux-amd64 /usr/bin/migrate
+RUN chmod +x /usr/bin/migrate
+
 ENV GO111MODULE=on
 ENV ADDR=0.0.0.0
 ENV TZ=Asia/Bangkok
@@ -11,6 +15,7 @@ WORKDIR /go/src/github.com/Blackmocca/go-lightweight-scheduler
 WORKDIR /go/src/github.com/Blackmocca/go-lightweight-scheduler
 
 COPY . . 
+RUN chmod +x script/*
 RUN go get -u github.com/githubnemo/CompileDaemon
 RUN go install github.com/githubnemo/CompileDaemon
 RUN go mod tidy     

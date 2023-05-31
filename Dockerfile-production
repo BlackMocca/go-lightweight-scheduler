@@ -1,5 +1,9 @@
 FROM golang:1.19
 
+RUN wget https://github.com/BlackMocca/migrate/releases/download/v5.3/migrate.linux-amd64
+RUN mv migrate.linux-amd64 /usr/bin/migrate
+RUN chmod +x /usr/bin/migrate
+
 RUN mkdir -p /go/src/github.com/Blackmocca/go-lightweight-scheduler
 WORKDIR /go/src/github.com/Blackmocca/go-lightweight-scheduler
 
@@ -16,6 +20,8 @@ RUN go mod tidy
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o   /go/src/github.com/Blackmocca/go-lightweight-scheduler/build/app main.go
 
 FROM alpine:latest 
+RUN apk update
+RUN apk add bash
 RUN apk --no-cache add ca-certificates
 WORKDIR /usr/app
 
@@ -25,6 +31,10 @@ ENV TZ=Asia/Bangkok
 COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/build/app .
 COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/assets assets
 COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/migrations migrations
+COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/script script
+COPY --from=0 /usr/bin/migrate /usr/bin/migrate
+RUN chmod +x /usr/bin/migrate
+RUN chmod +x script/*
 
 EXPOSE 3000
 EXPOSE 3100
