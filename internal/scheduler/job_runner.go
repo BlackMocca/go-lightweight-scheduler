@@ -7,6 +7,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/connection"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/logger"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/task"
@@ -48,6 +49,8 @@ type jobRunner struct {
 	logger              *logger.Log
 	taskResults         []taskResult
 	triggerConfig       *sync.Map
+	dbAdapter           connection.DatabaseAdapterConnection
+	triggerType         constants.TriggerType
 }
 
 type taskResult struct {
@@ -80,7 +83,7 @@ func newJobRunner(ctx context.Context, ji *JobInstance, triggerConfig *sync.Map,
 	uid, _ := uuid.NewV4()
 	runner := &jobRunner{
 		id:               uid.String(),
-		schedulerName:    ji.schedulerName,
+		schedulerName:    ji.scheduler.name,
 		ctx:              ctx,
 		tasks:            ji.tasks,
 		status:           constants.JOB_STATUS_WAITING,
@@ -90,6 +93,7 @@ func newJobRunner(ctx context.Context, ji *JobInstance, triggerConfig *sync.Map,
 		parameter:        new(sync.Map),
 		taskValue:        new(sync.Map),
 		triggerConfig:    new(sync.Map),
+		dbAdapter:        ji.scheduler.dbAdapter,
 	}
 
 	if ji.arguments != nil {
@@ -180,7 +184,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 			startDate:   time.Now(),
 			endDatetime: time.Now(),
 		}
-		jr.logger.Info(fmt.Sprintf("scheduler %s with starting task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"jobId": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339)})
+		jr.logger.Info(fmt.Sprintf("scheduler %s with starting task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339)})
 
 		jr.currentTaskIndex = index
 		value, err := taskExecution.Call(jr.ctx)
@@ -190,14 +194,14 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 			jr.exception = newRunnerException(err)
 			taskResult.status = constants.JOB_STATUS_ERROR
 			jr.taskResults[index] = taskResult
-			jr.logger.Error(err, map[string]interface{}{"jobId": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
+			jr.logger.Error(err, map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
 			return
 		}
 		taskResult.status = constants.JOB_STATUS_SUCCESS
 		jr.taskResults[index] = taskResult
 		jr.taskValue.Store(taskExecution.GetName(), value)
 
-		jr.logger.Info(fmt.Sprintf("scheduler %s with ending task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"jobId": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
+		jr.logger.Info(fmt.Sprintf("scheduler %s with ending task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
 
 		switch taskExecution.GetType() {
 		case constants.TASK_TYPE_BRANCH_TASK:

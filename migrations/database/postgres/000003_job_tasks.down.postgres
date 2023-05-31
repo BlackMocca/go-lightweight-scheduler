@@ -1,0 +1,5 @@
+DROP INDEX IF EXISTS idx_unique_job_tasks;
+DROP INDEX IF EXISTS idx_job_tasks;
+
+DROP TABLE job_tasks;
+

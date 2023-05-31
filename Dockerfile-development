@@ -1,5 +1,10 @@
 FROM golang:1.19
 
+RUN wget https://github.com/BlackMocca/migrate/releases/download/v5.3/migrate.linux-amd64
+RUN wget https://github.com/BlackMocca/migrate/releases/download/v5.3/migrate.linux-amd64
+RUN mv migrate.linux-amd64 /usr/bin/migrate
+RUN chmod +x /usr/bin/migrate
+
 ENV GO111MODULE=on
 ENV ADDR=0.0.0.0
 ENV TZ=Asia/Bangkok

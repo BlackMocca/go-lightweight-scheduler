@@ -24,7 +24,17 @@ func NewTask(name string, execution executor.Execution) Execution {
 }
 
 func (s Task) MarshalJSON() ([]byte, error) {
-	return json.Marshal(s.taskbase)
+	type ptr struct {
+		TaskType      string `json:"type"`
+		Name          string `json:"name"`
+		ExecutionName string `json:"execution_name"`
+	}
+	sh := ptr{
+		TaskType:      string(s.taskbase.taskType),
+		Name:          s.taskbase.name,
+		ExecutionName: s.fn.GetName(),
+	}
+	return json.Marshal(sh)
 }
 
 func (t Task) GetType() constants.TaskType {

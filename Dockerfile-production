@@ -1,5 +1,9 @@
 FROM golang:1.19
 
+RUN wget https://github.com/BlackMocca/migrate/releases/download/v5.3/migrate.linux-amd64
+RUN mv migrate.linux-amd64 /usr/bin/migrate
+RUN chmod +x /usr/bin/migrate
+
 RUN mkdir -p /go/src/github.com/Blackmocca/go-lightweight-scheduler
 WORKDIR /go/src/github.com/Blackmocca/go-lightweight-scheduler
 
@@ -28,6 +32,8 @@ COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/build/app .
 COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/assets assets
 COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/migrations migrations
 COPY --from=0 /go/src/github.com/Blackmocca/go-lightweight-scheduler/script script
+COPY --from=0 /usr/bin/migrate /usr/bin/migrate
+RUN chmod +x /usr/bin/migrate
 RUN chmod +x script/*
 
 EXPOSE 3000

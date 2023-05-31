@@ -31,14 +31,16 @@ func NewTaskBranch(name string, execution executor.Execution, tasks []TaskBranch
 
 func (s TaskBranch) MarshalJSON() ([]byte, error) {
 	type ptr struct {
-		TaskType    string              `json:"type"`
-		Name        string              `json:"name"`
-		TaskBranchs TaskBranchPipeLines `json:"task_branchs"`
+		TaskType      string              `json:"type"`
+		Name          string              `json:"name"`
+		ExecutionName string              `json:"execution_name"`
+		TaskBranchs   TaskBranchPipeLines `json:"task_branchs"`
 	}
 	sh := ptr{
-		TaskType:    string(s.taskbase.taskType),
-		Name:        string(s.taskbase.name),
-		TaskBranchs: s.taskBranchs,
+		TaskType:      string(s.taskbase.taskType),
+		Name:          string(s.taskbase.name),
+		ExecutionName: s.fn.GetName(),
+		TaskBranchs:   s.taskBranchs,
 	}
 	return json.Marshal(sh)
 }

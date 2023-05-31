@@ -18,6 +18,10 @@ func NewBashExecutor(cmd string, showResult bool) Execution {
 	}
 }
 
+func (b BashExecutor) GetName() string {
+	return "BashExecutor"
+}
+
 func (b BashExecutor) Execute(ctx context.Context) (interface{}, error) {
 	cmd := exec.Command("bash", "-c", b.cmd)
 	output, err := cmd.Output()

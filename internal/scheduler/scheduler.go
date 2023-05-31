@@ -1,13 +1,16 @@
 package scheduler
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
-	"sync"
+	"fmt"
 	"time"
 
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/connection"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/logger"
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/models"
 	"github.com/go-co-op/gocron"
 )
 
@@ -18,6 +21,7 @@ type SchedulerInstance struct {
 	jobInstance    *JobInstance
 	config         SchedulerConfig
 	logger         *logger.Log
+	dbAdapter      connection.DatabaseAdapterConnection
 }
 
 func NewScheduler(cronExpression string, name string, config SchedulerConfig) *SchedulerInstance {
@@ -80,12 +84,28 @@ func (s SchedulerInstance) GetCronjobExpression() string {
 	return s.cronExpression
 }
 
-func (s SchedulerInstance) Start() {
+func (s *SchedulerInstance) SetAdapter(dbAdapter connection.DatabaseAdapterConnection) {
+	s.dbAdapter = dbAdapter
+}
+
+func (s SchedulerInstance) GetAdapter() connection.DatabaseAdapterConnection {
+	return s.dbAdapter
+}
+
+func (s *SchedulerInstance) Start() error {
+	_, fn := s.jobInstance.trigger("", nil, nil)
+	job, err := s.Scheduler.Cron(s.cronExpression).Do(fn)
+	if err != nil {
+		return err
+	}
+	s.jobInstance.Job = job
+
 	s.Scheduler.StartAsync()
 	s.logger.Info("start scheduler", map[string]interface{}{
 		"scheduler_cronjob_expression": s.cronExpression,
 		"scheduler_name":               s.name,
 	})
+	return nil
 }
 
 func (s SchedulerInstance) Stop() {
@@ -99,33 +119,35 @@ func (s *SchedulerInstance) RegisterJob(jobInstance *JobInstance) error {
 	if jobInstance.GetTotalTask() == 0 {
 		return errors.New("required any task in jobInstance")
 	}
-	jobInstance.SetScheduler(s.name, s.config)
-
-	_, fn := jobInstance.trigger(nil, nil)
-	job, err := s.Scheduler.Cron(s.cronExpression).Do(fn)
-	if err != nil {
-		return err
-	}
-
-	jobInstance.Job = job
+	jobInstance.SetScheduler(s)
 	s.jobInstance = jobInstance
+
 	return nil
 }
 
-func (s *SchedulerInstance) Run(triggerConfig *sync.Map, triggerTime time.Time) string {
+func (s *SchedulerInstance) Run(trigger *models.Trigger) string {
 	/* ตั้งเวลาล่วงหน้า */
-	if triggerTime != (time.Time{}) && triggerTime.Sub(time.Now()) > 0 {
-		duration := triggerTime.Sub(time.Now())
-		jobId, fn := s.jobInstance.trigger(triggerConfig, &triggerTime)
+	fmt.Println(trigger.ExecuteDatetime.Sub(time.Now()))
+	if trigger.ExecuteDatetime != (time.Time{}) && trigger.ExecuteDatetime.Sub(time.Now()) > 0 {
+		duration := trigger.ExecuteDatetime.Sub(time.Now())
+		jobId, fn := s.jobInstance.trigger(trigger.JobId, trigger.GetConfigMutex(), &trigger.ExecuteDatetime)
 
-		go func(duration time.Duration, call func()) {
+		trigger.JobId = jobId
+		go func(trigger models.Trigger, duration time.Duration, call func()) {
 			time.Sleep(duration)
-			fn()
-		}(duration, fn)
+			trigger.IsTrigger = true
+			if trigger.IsActive {
+				fn()
+				s.dbAdapter.GetRepository().UpsertTrigger(context.Background(), &trigger)
+			}
+		}(*trigger, duration, fn)
 		return jobId
 	}
 	/* run ทันที */
-	jobId, fn := s.jobInstance.trigger(triggerConfig, nil)
+	jobId, fn := s.jobInstance.trigger(trigger.JobId, trigger.GetConfigMutex(), nil)
 	go fn()
+	trigger.JobId = jobId
+	trigger.IsTrigger = true
+	go s.dbAdapter.GetRepository().UpsertTrigger(context.Background(), trigger)
 	return jobId
 }

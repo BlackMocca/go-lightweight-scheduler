@@ -2,10 +2,11 @@ package http
 
 import (
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/dag"
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/models"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/scheduler"
 	"github.com/Blackmocca/go-lightweight-scheduler/service/v1/schedule"
 	"github.com/labstack/echo/v4"
@@ -13,10 +14,11 @@ import (
 )
 
 type scheduleHandler struct {
+	repository schedule.Repository
 }
 
-func NewScheduleHandler() schedule.HttpHandler {
-	return &scheduleHandler{}
+func NewScheduleHandler(repository schedule.Repository) schedule.HttpHandler {
+	return &scheduleHandler{repository: repository}
 }
 
 func (sh scheduleHandler) getOneSchedule(name string) *scheduler.SchedulerInstance {
@@ -54,24 +56,33 @@ func (sh scheduleHandler) GetOneSchedule(c echo.Context) error {
 }
 
 func (sh scheduleHandler) Trigger(c echo.Context) error {
+	var ctx = c.Request().Context()
 	var params = c.Get("params").(map[string]interface{})
 	var name = cast.ToString(params["name"])
 	var executeDatetime, _ = time.Parse(time.RFC3339, cast.ToString(params["execute_datetime"]))
 	var config = params["config"]
 	var schedule = sh.getOneSchedule(name)
 
-	var triggerConfig *sync.Map
+	trigger := &models.Trigger{
+		SchedulerName:   name,
+		ExecuteDatetime: executeDatetime,
+		IsActive:        true,
+		IsTrigger:       false,
+		TriggerType:     constants.TRIGGER_TYPE_EXTERNAL,
+		CreatedAt:       time.Now(),
+		UpdatedAt:       time.Now(),
+	}
 	if config != nil {
-		triggerConfig = new(sync.Map)
-		for k, v := range config.(map[string]interface{}) {
-			triggerConfig.Store(k, v)
-		}
+		trigger.Config = config.(map[string]interface{})
 	}
 
-	jobId := schedule.Run(triggerConfig, executeDatetime)
+	jobId := schedule.Run(trigger)
+	if err := sh.repository.UpsertTrigger(ctx, trigger); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
 
 	resp := map[string]interface{}{
-		"jobId": jobId,
+		"job_id": jobId,
 	}
 	return c.JSON(http.StatusOK, resp)
 }
