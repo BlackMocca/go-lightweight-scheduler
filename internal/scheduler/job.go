@@ -72,6 +72,18 @@ func (j *JobInstance) trigger(overrideJobId string, triggerConfig *sync.Map, exe
 	ctx = context.WithValue(ctx, constants.JOB_RUNNER_INSTANCE_KEY, runner.getRunnerInterface())
 	runner.ctx = ctx
 
+	runner.logjob = &models.Job{
+		SchedulerName: j.scheduler.name,
+		JobId:         runner.id,
+		Status:        runner.status,
+		StartDateTime: &runner.executeDatetime,
+		EndDatetime:   nil,
+		CreatedAt:     time.Now(),
+		UpdatedAt:     time.Now(),
+	}
+	if err := j.scheduler.GetAdapter().GetRepository().UpsertJob(ctx, runner.logjob); err != nil {
+		fmt.Println("fail to upsert job with status WAITING:", err.Error())
+	}
 	return runner.id, func() {
 		j.process(runner)
 	}
@@ -90,8 +102,19 @@ func (j *JobInstance) process(runner *jobRunner) {
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 		}
-		go j.scheduler.dbAdapter.GetRepository().UpsertTrigger(context.Background(), trigger)
+		j.scheduler.dbAdapter.GetRepository().UpsertTrigger(context.Background(), trigger)
 	}
+
+	runner.setStartProcess()
+	if err := j.scheduler.GetAdapter().GetRepository().UpsertJob(runner.ctx, runner.logjob); err != nil {
+		fmt.Println("fail to upsert job with status Before processing:", err.Error())
+	}
+	defer func() {
+		runner.setEndProcess()
+		if err := j.scheduler.GetAdapter().GetRepository().UpsertJob(runner.ctx, runner.logjob); err != nil {
+			fmt.Println("fail to upsert job with status After processing:", err.Error())
+		}
+	}()
 
 	defer runner.clear()
 	runner.run(runner.tasks)

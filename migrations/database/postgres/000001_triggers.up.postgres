@@ -1,6 +1,6 @@
 DO $$
 BEGIN
-    CREATE TYPE TRIGGER_TYPE AS ENUM ('Schedule', 'External');
+    CREATE TYPE TRIGGER_TYPE AS ENUM ('SCHEDULE', 'EXTERNAL');
 END
 $$;
 
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS triggers(
     "execute_datetime" TIMESTAMP NOT NULL,
     "job_id" VARCHAR(50) NOT NULL, 
     "config" TEXT DEFAULT NULL,
-    "type" TRIGGER_TYPE DEFAULT 'Schedule',
+    "type" TRIGGER_TYPE DEFAULT 'SCHEDULE',
     "is_trigger" BOOLEAN NOT NULL DEFAULT false,
     "is_active" BOOLEAN NOT NULL DEFAULT true,
     "created_at" TIMESTAMP DEFAULT NOW(),

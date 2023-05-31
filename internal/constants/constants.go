@@ -10,6 +10,6 @@ const (
 type TriggerType string
 
 const (
-	TRIGGER_TYPE_SCHEDULE TriggerType = "Schedule"
-	TRIGGER_TYPE_EXTERNAL TriggerType = "External"
+	TRIGGER_TYPE_SCHEDULE TriggerType = "SCHEDULE"
+	TRIGGER_TYPE_EXTERNAL TriggerType = "EXTERNAL"
 )

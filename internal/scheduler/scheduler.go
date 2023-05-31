@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/connection"
@@ -127,7 +126,6 @@ func (s *SchedulerInstance) RegisterJob(jobInstance *JobInstance) error {
 
 func (s *SchedulerInstance) Run(trigger *models.Trigger) string {
 	/* ตั้งเวลาล่วงหน้า */
-	fmt.Println(trigger.ExecuteDatetime.Sub(time.Now()))
 	if trigger.ExecuteDatetime != (time.Time{}) && trigger.ExecuteDatetime.Sub(time.Now()) > 0 {
 		duration := trigger.ExecuteDatetime.Sub(time.Now())
 		jobId, fn := s.jobInstance.trigger(trigger.JobId, trigger.GetConfigMutex(), &trigger.ExecuteDatetime)

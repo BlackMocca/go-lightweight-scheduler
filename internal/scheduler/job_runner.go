@@ -10,6 +10,7 @@ import (
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/connection"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/constants"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/logger"
+	"github.com/Blackmocca/go-lightweight-scheduler/internal/models"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/task"
 	"github.com/gofrs/uuid"
 )
@@ -43,6 +44,7 @@ type jobRunner struct {
 	exceptionOnTaskName string
 	exception           Exception
 	executeDatetime     time.Time
+	endDatetime         *time.Time
 	arguments           *sync.Map
 	parameter           *sync.Map
 	taskValue           *sync.Map
@@ -51,6 +53,8 @@ type jobRunner struct {
 	triggerConfig       *sync.Map
 	dbAdapter           connection.DatabaseAdapterConnection
 	triggerType         constants.TriggerType
+	logjob              *models.Job     // for save in db
+	logtaskrunning      *models.JobTask // for save in db
 }
 
 type taskResult struct {
@@ -167,11 +171,11 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 	}()
 	defer func() {
 		if jr.exception != nil {
-			jr.status = constants.JOB_STATUS_ERROR
+			jr.setStatus(constants.JOB_STATUS_FAILED)
 		}
 	}()
 
-	jr.status = constants.JOB_STATUS_RUNNING
+	jr.setStatus(constants.JOB_STATUS_RUNNING)
 	jr.tasks = tasks
 	jr.currentTaskIndex = 0
 	jr.taskResults = make([]taskResult, len(jr.tasks))
@@ -192,7 +196,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 		if err != nil {
 			jr.exceptionOnTaskName = taskExecution.GetName()
 			jr.exception = newRunnerException(err)
-			taskResult.status = constants.JOB_STATUS_ERROR
+			taskResult.status = constants.JOB_STATUS_FAILED
 			jr.taskResults[index] = taskResult
 			jr.logger.Error(err, map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
 			return
@@ -212,9 +216,24 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 		}
 	}
 
-	jr.status = constants.JOB_STATUS_SUCCESS
+	jr.setStatus(constants.JOB_STATUS_SUCCESS)
 }
 
 func (jr *jobRunner) clear() {
 	jr = nil
+}
+
+func (jr *jobRunner) setStartProcess() {
+	jr.setStatus(constants.JOB_STATUS_RUNNING)
+}
+
+func (jr *jobRunner) setEndProcess() {
+	ti := time.Now()
+	jr.endDatetime = &ti
+	jr.logjob.EndDatetime = &ti
+}
+
+func (jr *jobRunner) setStatus(status constants.JobStatus) {
+	jr.status = status
+	jr.logjob.Status = jr.status
 }

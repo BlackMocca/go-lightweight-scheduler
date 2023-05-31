@@ -53,6 +53,7 @@ func main() {
 		panic(err)
 	}
 	defer adapterConnection.Close(ctx)
+
 	// if err := connection.MigrateUp(adapterConnection); err != nil {
 	// 	panic(err)
 	// }

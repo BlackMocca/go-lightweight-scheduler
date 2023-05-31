@@ -6,7 +6,7 @@ import (
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/task"
 )
 
-func startDagExampleTaskBash() *scheduler.SchedulerInstance {
+func startDagExampleTaskBash() {
 	config := scheduler.NewDefaultSchedulerConfig()
 	schedulerInstance := scheduler.NewScheduler("*/5 * * * *", "example_bash_executor", config)
 
@@ -17,5 +17,5 @@ func startDagExampleTaskBash() *scheduler.SchedulerInstance {
 	)
 
 	schedulerInstance.RegisterJob(job)
-	return schedulerInstance
+	register(schedulerInstance)
 }

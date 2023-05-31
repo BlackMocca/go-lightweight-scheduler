@@ -10,7 +10,7 @@ import (
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/task"
 )
 
-func startDagExampleGolang() *scheduler.SchedulerInstance {
+func startDagExampleGolang() {
 	config := scheduler.NewDefaultSchedulerConfig()
 	config.OnError = func(ctx context.Context) error {
 		fmt.Println("on error")
@@ -58,5 +58,5 @@ func startDagExampleGolang() *scheduler.SchedulerInstance {
 	})))
 
 	schedulerInstance.RegisterJob(job)
-	return schedulerInstance
+	register(schedulerInstance)
 }

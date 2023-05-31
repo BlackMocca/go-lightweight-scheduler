@@ -18,7 +18,7 @@ const (
 	JOB_STATUS_WAITING JobStatus = "WAITING"
 	JOB_STATUS_RUNNING JobStatus = "RUNNING"
 	JOB_STATUS_SUCCESS JobStatus = "SUCCESS"
-	JOB_STATUS_ERROR   JobStatus = "ERROR"
+	JOB_STATUS_FAILED  JobStatus = "FAILED"
 )
 
 type JobContextKey string

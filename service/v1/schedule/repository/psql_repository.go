@@ -88,3 +88,43 @@ func (p psqlRepository) UpsertTrigger(ctx context.Context, trigger *models.Trigg
 
 	return err
 }
+
+func (p psqlRepository) UpsertJob(ctx context.Context, job *models.Job) error {
+	sql := `
+		INSERT INTO "jobs" ("scheduler_name", "job_id", "status", "start_datetime", "end_datetime", "created_at", "updated_at")
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT (scheduler_name, job_id)
+		DO UPDATE SET
+			status=?,
+			start_datetime=?,
+			end_datetime=?,
+			created_at=?,
+			updated_at=?
+	`
+	sql = sqlx.Rebind(sqlx.DOLLAR, sql)
+
+	stmt, err := p.client.PreparexContext(ctx, sql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx,
+		/* insert */
+		job.SchedulerName,
+		job.JobId,
+		string(job.Status),
+		job.StartDateTime,
+		job.EndDatetime,
+		job.CreatedAt,
+		job.UpdatedAt,
+		/* update */
+		job.Status,
+		job.StartDateTime,
+		job.EndDatetime,
+		job.CreatedAt,
+		job.UpdatedAt,
+	)
+
+	return err
+}

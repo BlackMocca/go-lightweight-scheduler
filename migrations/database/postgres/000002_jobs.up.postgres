@@ -1,13 +1,13 @@
 DO $$
 BEGIN
-    CREATE TYPE JOB_STATUS AS ENUM ('Waiting', 'Running', 'Success', 'Failed');
+    CREATE TYPE JOB_STATUS AS ENUM ('WAITING', 'RUNNING', 'SUCCESS', 'FAILED');
 END
 $$;
 
 CREATE TABLE IF NOT EXISTS jobs(
     "scheduler_name" VARCHAR(50) NOT NULL,
     "job_id" VARCHAR(50) NOT NULL,
-    "status" JOB_STATUS NOT NULL DEFAULT 'Waiting', 
+    "status" JOB_STATUS NOT NULL DEFAULT 'WAITING', 
     "start_datetime" TIMESTAMP NULL,
     "end_datetime" TIMESTAMP NULL,
     "created_at" TIMESTAMP DEFAULT NOW(),
@@ -16,4 +16,4 @@ CREATE TABLE IF NOT EXISTS jobs(
 
 
 CREATE UNIQUE INDEX idx_unique_jobs ON jobs (scheduler_name, job_id);
-CREATE INDEX idx_job ON jobs (job_id);
+CREATE UNIQUE INDEX idx_job ON jobs (job_id);
