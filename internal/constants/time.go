@@ -5,10 +5,9 @@ import (
 )
 
 var (
-	TIME_LOCATION, _ = time.LoadLocation("Asia/Bangkok")
-	offset           = time.Second * time.Duration(7*60*60)
-	TIME_CHANGE      = func(ti time.Time, isChangeOnlyUTC bool) time.Time {
-		ti = ti.In(TIME_LOCATION)
+	offset      = time.Second * time.Duration(7*60*60)
+	TIME_CHANGE = func(ti time.Time, isChangeOnlyUTC bool) time.Time {
+		ti = ti.Local()
 		if isChangeOnlyUTC {
 			ti = ti.Add(-time.Duration(offset))
 		}
