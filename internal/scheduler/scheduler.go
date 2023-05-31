@@ -94,12 +94,14 @@ func (s SchedulerInstance) GetAdapter() connection.DatabaseAdapterConnection {
 }
 
 func (s *SchedulerInstance) Start() error {
-	_, fn := s.jobInstance.trigger("", nil, nil)
-	job, err := s.Scheduler.Cron(s.cronExpression).Do(fn)
-	if err != nil {
-		return err
+	if s.cronExpression != "" {
+		_, fn := s.jobInstance.trigger("", nil, nil)
+		job, err := s.Scheduler.Cron(s.cronExpression).Do(fn)
+		if err != nil {
+			return err
+		}
+		s.jobInstance.Job = job
 	}
-	s.jobInstance.Job = job
 
 	s.Scheduler.StartAsync()
 	s.logger.Info("start scheduler", map[string]interface{}{

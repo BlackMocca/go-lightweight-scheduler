@@ -52,7 +52,7 @@ func (j JobInstance) GetTotalTask() int {
 
 func (j *JobInstance) SetScheduler(scheudler *SchedulerInstance) {
 	j.scheduler = scheudler
-	if scheudler.config.JobMode == constants.JOB_MODE_SIGNLETON {
+	if scheudler.config.JobMode == constants.JOB_MODE_SIGNLETON && scheudler.cronExpression != "" {
 		j.Job.SingletonMode()
 	}
 	j.logger = logger.NewLoggerWithFile(constants.LOG_PATH_RESULT_JOB(scheudler.name))

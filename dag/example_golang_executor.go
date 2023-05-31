@@ -37,6 +37,9 @@ func startDagExampleGolang() {
 		val := ctx.Value(constants.JOB_RUNNER_INSTANCE_KEY)
 		jobRunner := val.(scheduler.JobRunner)
 
+		config := jobRunner.GetTriggerConfig()
+		fmt.Println(config)
+
 		parameter := jobRunner.GetParameter()
 		parameter.Store("test", "bye")
 

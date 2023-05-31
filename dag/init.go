@@ -13,17 +13,22 @@ var (
 	SCHEDULERS = make([]*scheduler.SchedulerInstance, 0)
 )
 
+func call() {
+	if constants.ENV_ENABLED_DAG_EXAMPLE {
+		startDagExampleGolang()
+		startDagExampleTaskBash()
+		startDagExampleTaskBranch()
+		startDagExampleWorkWithoutCronjob()
+	}
+	//startdagExampleNewbie()
+}
+
 func register(scheduler *scheduler.SchedulerInstance) {
 	SCHEDULERS = append(SCHEDULERS, scheduler)
 }
 
 func StartAllDag(stop chan bool, adapterConnection connection.DatabaseAdapterConnection) {
-	if constants.ENV_ENABLED_DAG_EXAMPLE {
-		startDagExampleGolang()
-		startDagExampleTaskBash()
-		startDagExampleTaskBranch()
-	}
-
+	call()
 	for _, scheduler := range SCHEDULERS {
 		scheduler.SetAdapter(adapterConnection)
 		if err := scheduler.Start(); err != nil {
