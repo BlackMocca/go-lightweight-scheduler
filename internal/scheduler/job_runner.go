@@ -3,7 +3,6 @@ package scheduler
 import (
 	"context"
 	"errors"
-	"fmt"
 	"reflect"
 	"runtime/debug"
 	"sync"
@@ -215,7 +214,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 			status:    constants.JOB_STATUS_RUNNING,
 			startDate: time.Now(),
 		}
-		jr.logger.Info(fmt.Sprintf("scheduler %s with starting task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339)})
+		// jr.logger.Info(fmt.Sprintf("scheduler %s with starting task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339)})
 
 		jr.currentTaskIndex = index
 
@@ -230,7 +229,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 			jr.exception = newRunnerException(err, false)
 			taskResult.status = constants.JOB_STATUS_FAILED
 			jr.taskResults[index] = taskResult
-			jr.logger.Error(err, map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
+			// jr.logger.Error(err, map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
 			saveJobTask(jr, taskExecution, taskResult)
 			return
 		}
@@ -240,7 +239,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 		jr.taskResults[index] = taskResult
 		jr.taskValue.Store(taskExecution.GetName(), value)
 
-		jr.logger.Info(fmt.Sprintf("scheduler %s with ending task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
+		// jr.logger.Info(fmt.Sprintf("scheduler %s with ending task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
 
 		switch taskExecution.GetType() {
 		case constants.TASK_TYPE_BRANCH_TASK:

@@ -111,7 +111,6 @@ func (j *JobInstance) process(runner *jobRunner) {
 	}
 	defer func() {
 		runner.setEndProcess()
-		fmt.Println(runner)
 		if err := j.scheduler.GetAdapter().GetRepository().UpsertJob(runner.ctx, runner.logjob); err != nil {
 			fmt.Println("fail to upsert job with status After processing:", err.Error())
 		}
@@ -132,15 +131,15 @@ func (j *JobInstance) process(runner *jobRunner) {
 			j.scheduler.config.OnError(runner.ctx)
 		}
 
-		j.logger.Error(fmt.Errorf("error: scheduler on %s.%s with message %s", j.scheduler.name, runner.GetTask().GetName(), runner.exception.Error()), map[string]interface{}{
-			"job_id":             runner.id,
-			"scheduler_name":     j.scheduler.name,
-			"execution_datetime": runner.executeDatetime.Format(constants.TIME_FORMAT_RFC339),
-			"end_datetime":       time.Now().Format(constants.TIME_FORMAT_RFC339),
-			"status":             runner.GetStatus(),
-			"arguments":          constants.PARSE_SYNC_MAP_TO_MAP(runner.arguments),
-			"parameter":          constants.PARSE_SYNC_MAP_TO_MAP(runner.parameter),
-		})
+		// j.logger.Error(fmt.Errorf("error: scheduler on %s.%s with message %s", j.scheduler.name, runner.GetTask().GetName(), runner.exception.Error()), map[string]interface{}{
+		// 	"job_id":             runner.id,
+		// 	"scheduler_name":     j.scheduler.name,
+		// 	"execution_datetime": runner.executeDatetime.Format(constants.TIME_FORMAT_RFC339),
+		// 	"end_datetime":       time.Now().Format(constants.TIME_FORMAT_RFC339),
+		// 	"status":             runner.GetStatus(),
+		// 	"arguments":          constants.PARSE_SYNC_MAP_TO_MAP(runner.arguments),
+		// 	"parameter":          constants.PARSE_SYNC_MAP_TO_MAP(runner.parameter),
+		// })
 		return
 	}
 
@@ -149,13 +148,13 @@ func (j *JobInstance) process(runner *jobRunner) {
 		j.scheduler.config.OnSuccess(runner.ctx)
 	}
 	runner.GetArguments()
-	j.logger.Info("dag result success", map[string]interface{}{
-		"job_id":             runner.id,
-		"scheduler_name":     j.scheduler.name,
-		"execution_datetime": runner.executeDatetime.Format(constants.TIME_FORMAT_RFC339),
-		"end_datetime":       runner.taskResults[len(runner.taskResults)-1].endDatetime.Format(constants.TIME_FORMAT_RFC339),
-		"status":             runner.GetStatus(),
-		"arguments":          constants.PARSE_SYNC_MAP_TO_MAP(runner.arguments),
-		"parameter":          constants.PARSE_SYNC_MAP_TO_MAP(runner.parameter),
-	})
+	// j.logger.Info("dag result success", map[string]interface{}{
+	// 	"job_id":             runner.id,
+	// 	"scheduler_name":     j.scheduler.name,
+	// 	"execution_datetime": runner.executeDatetime.Format(constants.TIME_FORMAT_RFC339),
+	// 	"end_datetime":       runner.taskResults[len(runner.taskResults)-1].endDatetime.Format(constants.TIME_FORMAT_RFC339),
+	// 	"status":             runner.GetStatus(),
+	// 	"arguments":          constants.PARSE_SYNC_MAP_TO_MAP(runner.arguments),
+	// 	"parameter":          constants.PARSE_SYNC_MAP_TO_MAP(runner.parameter),
+	// })
 }

@@ -1,9 +1,7 @@
 package logger
 
 import (
-	"fmt"
 	"os"
-	"path"
 
 	"github.com/sirupsen/logrus"
 )
@@ -29,23 +27,24 @@ func NewLogger() *Log {
 }
 
 func NewLoggerWithFile(pathfile string) *Log {
-	if _, err := os.Stat(pathfile); os.IsNotExist(err) {
-		err := os.MkdirAll(path.Dir(pathfile), os.ModePerm)
-		if err != nil {
-			logrus.Error(err)
-		}
-	}
+	// if _, err := os.Stat(pathfile); os.IsNotExist(err) {
+	// 	err := os.MkdirAll(path.Dir(pathfile), os.ModePerm)
+	// 	if err != nil {
+	// 		logrus.Error(err)
+	// 	}
+	// }
 
-	f, err := os.OpenFile(pathfile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
-	if err != nil {
-		logrus.Error(fmt.Sprintf("error opening file: %v", err.Error()))
-	}
-	defer f.Close()
+	// f, err := os.OpenFile(pathfile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
+	// if err != nil {
+	// 	logrus.Error(fmt.Sprintf("error opening file: %v", err.Error()))
+	// }
+	// defer f.Close()
 
 	logger := logrus.New()
 	logger.SetFormatter(&logrus.TextFormatter{})
 	logger.SetLevel(logrus.InfoLevel)
-	logger.SetOutput(f)
+	// logger.SetOutput(f)
+	logger.SetOutput(os.Stderr)
 
 	return &Log{Logger: logger, outType: out_type_file, pathfile: pathfile}
 }
@@ -62,15 +61,16 @@ func openFile(pathfile string) *os.File {
 func (logger *Log) Info(msg interface{}, fields map[string]interface{}) {
 	switch logger.outType {
 	case out_type_file:
-		if f := openFile(logger.pathfile); f != nil {
-			defer f.Close()
-			logger.Logger.SetOutput(f)
-			if fields != nil {
-				logger.Logger.WithFields(fields).Info(msg)
-			} else {
-				logger.Logger.Info(msg)
-			}
-		}
+		// if f := openFile(logger.pathfile); f != nil {
+		// 	defer f.Close()
+		// 	logger.Logger.SetOutput(f)
+		// 	if fields != nil {
+		// 		logger.Logger.WithFields(fields).Info(msg)
+		// 	} else {
+		// 		logger.Logger.Info(msg)
+		// 	}
+		// }
+		fallthrough
 	case out_type_stderr:
 		if fields != nil {
 			logger.Logger.WithFields(fields).Info(msg)
@@ -83,15 +83,16 @@ func (logger *Log) Info(msg interface{}, fields map[string]interface{}) {
 func (logger *Log) Error(msg interface{}, fields map[string]interface{}) {
 	switch logger.outType {
 	case out_type_file:
-		if f := openFile(logger.pathfile); f != nil {
-			defer f.Close()
-			logger.Logger.SetOutput(f)
-			if fields != nil {
-				logger.Logger.WithFields(fields).Error(msg)
-			} else {
-				logger.Logger.Error(msg)
-			}
-		}
+		// if f := openFile(logger.pathfile); f != nil {
+		// 	defer f.Close()
+		// 	logger.Logger.SetOutput(f)
+		// 	if fields != nil {
+		// 		logger.Logger.WithFields(fields).Error(msg)
+		// 	} else {
+		// 		logger.Logger.Error(msg)
+		// 	}
+		// }
+		fallthrough
 	case out_type_stderr:
 		if fields != nil {
 			logger.Logger.WithFields(fields).Error(msg)
