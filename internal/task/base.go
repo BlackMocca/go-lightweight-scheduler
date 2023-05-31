@@ -10,6 +10,7 @@ import (
 type Execution interface {
 	GetType() constants.TaskType
 	GetName() string
+	GetExecutionName() string
 	Call(ctx context.Context) (interface{}, error)
 	MarshalJSON() ([]byte, error)
 }

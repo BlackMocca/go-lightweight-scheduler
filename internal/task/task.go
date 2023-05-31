@@ -45,6 +45,10 @@ func (t Task) GetName() string {
 	return t.name
 }
 
+func (t Task) GetExecutionName() string {
+	return t.fn.GetName()
+}
+
 func (t Task) Call(ctx context.Context) (interface{}, error) {
 	return t.fn.Execute(ctx)
 }

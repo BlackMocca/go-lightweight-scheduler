@@ -2,7 +2,9 @@ package scheduler
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"reflect"
 	"runtime/debug"
 	"sync"
 	"time"
@@ -61,7 +63,7 @@ type taskResult struct {
 	task        task.Execution
 	status      constants.JobStatus
 	startDate   time.Time
-	endDatetime time.Time
+	endDatetime *time.Time
 }
 
 type runnerException struct {
@@ -69,11 +71,14 @@ type runnerException struct {
 	stack []byte
 }
 
-func newRunnerException(err error) Exception {
-	return &runnerException{
-		err:   err,
-		stack: debug.Stack(),
+func newRunnerException(err error, withStackTrace bool) Exception {
+	ex := &runnerException{
+		err: err,
 	}
+	if withStackTrace {
+		ex.stack = debug.Stack()
+	}
+	return ex
 }
 
 func (r *runnerException) Error() string {
@@ -166,14 +171,37 @@ func (jr jobRunner) GetLogger() *logger.Log {
 func (jr *jobRunner) run(tasks []task.Execution) {
 	defer func() {
 		if r := recover(); r != nil {
-			jr.exception = newRunnerException(r.(error))
+			if reflect.TypeOf(r).Kind() == reflect.String {
+				jr.exception = newRunnerException(errors.New(r.(string)), true)
+				jr.setStatus(constants.JOB_STATUS_FAILED)
+			} else {
+				jr.exception = newRunnerException(r.(error), true)
+				jr.setStatus(constants.JOB_STATUS_FAILED)
+			}
 		}
 	}()
-	defer func() {
-		if jr.exception != nil {
-			jr.setStatus(constants.JOB_STATUS_FAILED)
+
+	/* save processing on task but without error */
+	saveJobTask := func(runner *jobRunner, taskExecution task.Execution, taskResult taskResult) error {
+		jobtask := &models.JobTask{
+			JobId:         jr.id,
+			SchedulerName: jr.schedulerName,
+			Status:        taskResult.status,
+			TaskName:      taskExecution.GetName(),
+			TaskType:      string(taskExecution.GetType()),
+			ExecutionName: taskExecution.GetExecutionName(),
+			StartDateTime: taskResult.startDate,
+			EndDatetime:   taskResult.endDatetime,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
 		}
-	}()
+		if runner.exception != nil {
+			jobtask.TaskException = runner.exception.Error()
+			jobtask.StackTrace = runner.exception.StackTrace()
+		}
+		jr.logtaskrunning = jobtask
+		return jr.dbAdapter.GetRepository().UpsertJobTask(jr.ctx, jobtask)
+	}
 
 	jr.setStatus(constants.JOB_STATUS_RUNNING)
 	jr.tasks = tasks
@@ -184,24 +212,31 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 		jr.logger = logger.NewLoggerWithFile(pathfile)
 
 		taskResult := taskResult{
-			status:      constants.JOB_STATUS_RUNNING,
-			startDate:   time.Now(),
-			endDatetime: time.Now(),
+			status:    constants.JOB_STATUS_RUNNING,
+			startDate: time.Now(),
 		}
 		jr.logger.Info(fmt.Sprintf("scheduler %s with starting task %s", jr.schedulerName, taskExecution.GetName()), map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339)})
 
 		jr.currentTaskIndex = index
+
+		/* save in db */
+		saveJobTask(jr, taskExecution, taskResult)
+
 		value, err := taskExecution.Call(jr.ctx)
-		taskResult.endDatetime = time.Now()
+		ti := time.Now()
+		taskResult.endDatetime = &ti
 		if err != nil {
 			jr.exceptionOnTaskName = taskExecution.GetName()
-			jr.exception = newRunnerException(err)
+			jr.exception = newRunnerException(err, false)
 			taskResult.status = constants.JOB_STATUS_FAILED
 			jr.taskResults[index] = taskResult
 			jr.logger.Error(err, map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})
+			saveJobTask(jr, taskExecution, taskResult)
 			return
 		}
 		taskResult.status = constants.JOB_STATUS_SUCCESS
+		saveJobTask(jr, taskExecution, taskResult)
+
 		jr.taskResults[index] = taskResult
 		jr.taskValue.Store(taskExecution.GetName(), value)
 
@@ -225,12 +260,14 @@ func (jr *jobRunner) clear() {
 
 func (jr *jobRunner) setStartProcess() {
 	jr.setStatus(constants.JOB_STATUS_RUNNING)
+	jr.logjob.UpdatedAt = time.Now()
 }
 
 func (jr *jobRunner) setEndProcess() {
 	ti := time.Now()
 	jr.endDatetime = &ti
 	jr.logjob.EndDatetime = &ti
+	jr.logjob.UpdatedAt = ti
 }
 
 func (jr *jobRunner) setStatus(status constants.JobStatus) {

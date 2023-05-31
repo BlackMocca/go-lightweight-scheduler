@@ -55,7 +55,7 @@ func main() {
 	defer adapterConnection.Close(ctx)
 
 	// if err := connection.MigrateUp(adapterConnection); err != nil {
-	// 	panic(err)
+	// panic(err)
 	// }
 
 	e, _, _ := getWebInstance(adapterConnection)

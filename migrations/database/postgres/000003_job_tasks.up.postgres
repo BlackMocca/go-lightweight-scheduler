@@ -1,11 +1,15 @@
 CREATE TABLE IF NOT EXISTS job_tasks(
     "id" SERIAL PRIMARY KEY,
+    "scheduler_name" VARCHAR(50) NOT NULL,
     "job_id" VARCHAR(50) NOT NULL,
+    "task_status" JOB_STATUS NOT NULL DEFAULT 'WAITING',
     "task_name" VARCHAR(100) NOT NULL,
     "task_type" VARCHAR(100) NOT NULL,
     "execution_name" VARCHAR(100) NOT NULL,
     "start_datetime" TIMESTAMP NULL,
     "end_datetime" TIMESTAMP NULL,
+    "exception" TEXT,
+    "stacktrace" TEXT,
     "created_at" TIMESTAMP DEFAULT NOW(),
     "updated_at" TIMESTAMP DEFAULT NOW()
 );

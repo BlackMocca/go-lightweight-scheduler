@@ -111,6 +111,7 @@ func (j *JobInstance) process(runner *jobRunner) {
 	}
 	defer func() {
 		runner.setEndProcess()
+		fmt.Println(runner)
 		if err := j.scheduler.GetAdapter().GetRepository().UpsertJob(runner.ctx, runner.logjob); err != nil {
 			fmt.Println("fail to upsert job with status After processing:", err.Error())
 		}
@@ -119,15 +120,23 @@ func (j *JobInstance) process(runner *jobRunner) {
 	defer runner.clear()
 	runner.run(runner.tasks)
 	if runner.exception != nil {
+		if runner.logtaskrunning != nil {
+			runner.logtaskrunning.Status = constants.JOB_STATUS_FAILED
+			runner.logtaskrunning.UpdatedAt = time.Now()
+			runner.logtaskrunning.TaskException = runner.exception.Error()
+			runner.logtaskrunning.StackTrace = runner.exception.StackTrace()
+			j.scheduler.GetAdapter().GetRepository().UpsertJobTask(runner.ctx, runner.logtaskrunning)
+		}
 		/* case error */
 		if j.scheduler.config.OnError != nil {
 			j.scheduler.config.OnError(runner.ctx)
 		}
+
 		j.logger.Error(fmt.Errorf("error: scheduler on %s.%s with message %s", j.scheduler.name, runner.GetTask().GetName(), runner.exception.Error()), map[string]interface{}{
 			"job_id":             runner.id,
 			"scheduler_name":     j.scheduler.name,
 			"execution_datetime": runner.executeDatetime.Format(constants.TIME_FORMAT_RFC339),
-			"end_datetime":       runner.taskResults[len(runner.taskResults)-1].endDatetime.Format(constants.TIME_FORMAT_RFC339),
+			"end_datetime":       time.Now().Format(constants.TIME_FORMAT_RFC339),
 			"status":             runner.GetStatus(),
 			"arguments":          constants.PARSE_SYNC_MAP_TO_MAP(runner.arguments),
 			"parameter":          constants.PARSE_SYNC_MAP_TO_MAP(runner.parameter),

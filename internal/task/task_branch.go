@@ -53,6 +53,10 @@ func (t TaskBranch) GetName() string {
 	return t.name
 }
 
+func (t TaskBranch) GetExecutionName() string {
+	return t.fn.GetName()
+}
+
 func (t TaskBranch) Call(ctx context.Context) (interface{}, error) {
 	taskname, err := t.fn.Execute(ctx)
 	if err != nil {

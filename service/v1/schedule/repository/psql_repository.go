@@ -128,3 +128,56 @@ func (p psqlRepository) UpsertJob(ctx context.Context, job *models.Job) error {
 
 	return err
 }
+
+func (p psqlRepository) UpsertJobTask(ctx context.Context, jobTask *models.JobTask) error {
+	sql := `
+	INSERT INTO "job_tasks" ("scheduler_name", "job_id", "task_status", "task_name", "task_type", "execution_name", "start_datetime", "end_datetime", "exception", "stacktrace", "created_at", "updated_at")
+	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+	ON CONFLICT (job_id, task_name)
+	DO UPDATE SET
+		task_status=?,
+		task_type=?,
+		execution_name=?,
+		start_datetime=?,
+		end_datetime=?,
+		exception=?,
+		stacktrace=?,
+		created_at=?,
+		updated_at=?
+	`
+	sql = sqlx.Rebind(sqlx.DOLLAR, sql)
+
+	stmt, err := p.client.PreparexContext(ctx, sql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	_, err = stmt.ExecContext(ctx,
+		/* insert */
+		jobTask.SchedulerName,
+		jobTask.JobId,
+		jobTask.Status,
+		jobTask.TaskName,
+		jobTask.TaskType,
+		jobTask.ExecutionName,
+		jobTask.StartDateTime,
+		jobTask.EndDatetime,
+		jobTask.TaskException,
+		jobTask.StackTrace,
+		jobTask.CreatedAt,
+		jobTask.UpdatedAt,
+		/* update */
+		jobTask.Status,
+		jobTask.TaskType,
+		jobTask.ExecutionName,
+		jobTask.StartDateTime,
+		jobTask.EndDatetime,
+		jobTask.TaskException,
+		jobTask.StackTrace,
+		jobTask.CreatedAt,
+		jobTask.UpdatedAt,
+	)
+
+	return err
+}
