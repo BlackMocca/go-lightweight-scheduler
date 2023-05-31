@@ -17,19 +17,21 @@ type SchedulerInstance struct {
 	Scheduler      *gocron.Scheduler
 	cronExpression string
 	name           string
+	description    string
 	jobInstance    *JobInstance
 	config         SchedulerConfig
 	logger         *logger.Log
 	dbAdapter      connection.DatabaseAdapterConnection
 }
 
-func NewScheduler(cronExpression string, name string, config SchedulerConfig) *SchedulerInstance {
+func NewScheduler(cronExpression string, name string, description string, config SchedulerConfig) *SchedulerInstance {
 	scheduler := gocron.NewScheduler(time.Local)
 	scheduler.SetMaxConcurrentJobs(config.MaxActiveConcurrent, gocron.WaitMode)
 
 	return &SchedulerInstance{
 		Scheduler:      scheduler,
 		name:           name,
+		description:    description,
 		cronExpression: cronExpression,
 		config:         config,
 		logger:         logger.NewLoggerWithFile(constants.LOG_PATH_SCHEDULER),
@@ -134,10 +136,11 @@ func (s *SchedulerInstance) Run(trigger *models.Trigger) string {
 		go func(trigger models.Trigger, duration time.Duration, call func()) {
 			time.Sleep(duration)
 			trigger.IsTrigger = true
-			if trigger.IsActive {
+			checkTrigger, _ := s.dbAdapter.GetRepository().GetOneTriggerByJobId(context.Background(), trigger.JobId)
+			if checkTrigger != nil && checkTrigger.IsActive {
 				fn()
-				s.dbAdapter.GetRepository().UpsertTrigger(context.Background(), &trigger)
 			}
+			s.dbAdapter.GetRepository().UpsertTrigger(context.Background(), &trigger)
 		}(*trigger, duration, fn)
 		return jobId
 	}

@@ -28,7 +28,7 @@ func startDagExampleGolang() {
 		fmt.Println(parameter)
 		return nil
 	}
-	schedulerInstance := scheduler.NewScheduler("*/5 * * * *", "example_golang_executor", config)
+	schedulerInstance := scheduler.NewScheduler("*/5 * * * *", "example_golang_executor", "ทดสอบ task func by golang", config)
 
 	job := scheduler.NewJob(map[string]interface{}{"hi": "world"})
 	job.AddTask(task.NewTask("testfoo1", executor.NewGolangExecuter(func(ctx context.Context) (interface{}, error) {

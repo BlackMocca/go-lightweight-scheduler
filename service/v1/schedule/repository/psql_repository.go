@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 
 	"github.com/BlackMocca/sqlx"
@@ -17,6 +18,16 @@ type psqlRepository struct {
 func NewPsqlRepository(client *sqlx.DB) schedule.Repository {
 	return &psqlRepository{
 		client: client,
+	}
+}
+
+func (p psqlRepository) setTrigger(ptr *models.Trigger) {
+	ptr.ExecuteDatetime = constants.TIME_CHANGE(ptr.ExecuteDatetime, true)
+	if ptr.ConfigString != "" {
+		var m = map[string]interface{}{}
+		if err := json.Unmarshal([]byte(ptr.ConfigString), &m); err == nil {
+			ptr.Config = m
+		}
 	}
 }
 
@@ -44,7 +55,7 @@ func (p psqlRepository) GetTriggerTimer(ctx context.Context, schedulerName strin
 	}
 	if len(ptrs) > 0 {
 		for index, _ := range ptrs {
-			ptrs[index].ExecuteDatetime = constants.TIME_CHANGE(ptrs[index].ExecuteDatetime, true)
+			p.setTrigger(ptrs[index])
 		}
 	}
 
@@ -72,7 +83,7 @@ func (p psqlRepository) UpsertTrigger(ctx context.Context, trigger *models.Trigg
 	_, err = stmt.ExecContext(ctx,
 		/* insert */
 		trigger.SchedulerName,
-		trigger.ExecuteDatetime,
+		trigger.ExecuteDatetime.Format(constants.TIME_FORMAT_RFC339),
 		trigger.JobId,
 		trigger.GetConfigString(),
 		trigger.TriggerType,
@@ -180,4 +191,89 @@ func (p psqlRepository) UpsertJobTask(ctx context.Context, jobTask *models.JobTa
 	)
 
 	return err
+}
+
+func (p psqlRepository) GetOneTriggerByJobId(ctx context.Context, jobId string) (*models.Trigger, error) {
+	var ptr = new(models.Trigger)
+	sql := `
+		SELECT 
+			*
+		FROM
+			triggers
+		WHERE
+			job_id = ?
+	`
+
+	sql = sqlx.Rebind(sqlx.DOLLAR, sql)
+	stmt, err := p.client.PreparexContext(ctx, sql)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	if err := stmt.GetContext(ctx, ptr, jobId); err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	p.setTrigger(ptr)
+	return ptr, nil
+}
+
+func (p psqlRepository) GetOneJob(ctx context.Context, jobId string) (*models.Job, error) {
+	var ptr = new(models.Job)
+	sql := `
+		SELECT 
+			*
+		FROM
+			jobs
+		WHERE
+			job_id = ?
+	`
+
+	sql = sqlx.Rebind(sqlx.DOLLAR, sql)
+	stmt, err := p.client.PreparexContext(ctx, sql)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	if err := stmt.GetContext(ctx, ptr, jobId); err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return ptr, nil
+}
+
+func (p psqlRepository) GetOneJobTaskByJobId(ctx context.Context, jobId string) ([]*models.JobTask, error) {
+	var ptrs = []*models.JobTask{}
+	sql := `
+		SELECT 
+			*
+		FROM
+			job_tasks
+		WHERE
+			job_id = ?
+	`
+
+	sql = sqlx.Rebind(sqlx.DOLLAR, sql)
+	stmt, err := p.client.PreparexContext(ctx, sql)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	if err := stmt.SelectContext(ctx, &ptrs, jobId); err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return ptrs, nil
 }

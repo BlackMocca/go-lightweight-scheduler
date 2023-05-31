@@ -6,4 +6,5 @@ type HttpHandler interface {
 	GetListSchedule(echo.Context) error
 	GetOneSchedule(echo.Context) error
 	Trigger(echo.Context) error
+	GetOneJobById(echo.Context) error
 }

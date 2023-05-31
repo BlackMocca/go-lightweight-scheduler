@@ -8,7 +8,7 @@ import (
 
 func startDagExampleTaskBash() {
 	config := scheduler.NewDefaultSchedulerConfig()
-	schedulerInstance := scheduler.NewScheduler("*/5 * * * *", "example_bash_executor", config)
+	schedulerInstance := scheduler.NewScheduler("*/5 * * * *", "example_bash_executor", "ทดสอบ bash_executor", config)
 
 	job := scheduler.NewJob(nil)
 	job.AddTask(

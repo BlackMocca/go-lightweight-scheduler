@@ -54,9 +54,11 @@ func main() {
 	}
 	defer adapterConnection.Close(ctx)
 
-	// if err := connection.MigrateUp(adapterConnection); err != nil {
-	// panic(err)
-	// }
+	if constants.ENV_MIGRATE_TABLE {
+		if err := connection.MigrateUp(adapterConnection); err != nil {
+			panic(err)
+		}
+	}
 
 	e, _, _ := getWebInstance(adapterConnection)
 

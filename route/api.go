@@ -33,5 +33,6 @@ func (r Route) RegisterHealthcheck() {
 func (r Route) RegisterSchedule(handler schedule.HttpHandler, validation _schedule_validator.Validation) {
 	r.auth.GET("/v1/schedulers", handler.GetListSchedule)
 	r.auth.GET("/v1/scheduler/:name", handler.GetOneSchedule)
+	r.auth.GET("/v1/job/:job_id", handler.GetOneJobById)
 	r.auth.POST("/v1/scheduler/triggers", handler.Trigger, validation.ValidateTrigger)
 }

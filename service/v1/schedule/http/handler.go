@@ -86,3 +86,37 @@ func (sh scheduleHandler) Trigger(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, resp)
 }
+
+func (sh scheduleHandler) GetOneJobById(c echo.Context) error {
+	var ctx = c.Request().Context()
+	var jobId = c.Param("job_id")
+
+	job, err := sh.repository.GetOneJob(ctx, jobId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	if job == nil {
+		return echo.NewHTTPError(http.StatusNoContent)
+	}
+
+	trigger, err := sh.repository.GetOneTriggerByJobId(ctx, jobId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	if trigger != nil {
+		job.Trigger = trigger
+	}
+
+	jobtasks, err := sh.repository.GetOneJobTaskByJobId(ctx, jobId)
+	if err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+	}
+	if len(jobtasks) > 0 {
+		job.JobRunningTasks = jobtasks
+	}
+
+	resp := map[string]interface{}{
+		"job": job,
+	}
+	return c.JSON(http.StatusOK, resp)
+}
