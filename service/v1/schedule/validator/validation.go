@@ -10,15 +10,20 @@ import (
 )
 
 type Validation struct {
-	triggerSchema []byte
+	triggerSchema            []byte
+	unActivatedTriggerSchema []byte
 }
 
 func NewValidation() Validation {
-	bu, err := ioutil.ReadFile("./service/v1/schedule/validator/trigger_schema.json")
+	bu, err := ioutil.ReadFile("./assets/jsonschema/v1/schedule/trigger_schema.json")
 	if err != nil {
 		panic(err)
 	}
-	return Validation{triggerSchema: bu}
+	bu2, err := ioutil.ReadFile("./assets/jsonschema/v1/schedule/unactivated_trigger_schema.json")
+	if err != nil {
+		panic(err)
+	}
+	return Validation{triggerSchema: bu, unActivatedTriggerSchema: bu2}
 }
 
 func (v Validation) getLoader(bu []byte) (*gojsonschema.Schema, error) {
@@ -57,6 +62,26 @@ func (v Validation) toMap(results []gojsonschema.ResultError) map[string]interfa
 func (v Validation) ValidateTrigger(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(c echo.Context) error {
 		schema, err := v.getLoader(v.triggerSchema)
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		var params = c.Get("params").(map[string]interface{})
+
+		result, err := schema.Validate(gojsonschema.NewGoLoader(params))
+		if err != nil {
+			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		}
+		if !result.Valid() {
+			return echo.NewHTTPError(http.StatusBadRequest, v.toMap(result.Errors()))
+		}
+
+		return next(c)
+	}
+}
+
+func (v Validation) ValidateUnActivatedTrigger(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(c echo.Context) error {
+		schema, err := v.getLoader(v.unActivatedTriggerSchema)
 		if err != nil {
 			return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
 		}

@@ -11,6 +11,7 @@ import (
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/models"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/task"
 	"github.com/go-co-op/gocron"
+	"github.com/labstack/gommon/log"
 )
 
 type JobInstance struct {
@@ -59,38 +60,37 @@ func (j *JobInstance) SetScheduler(scheudler *SchedulerInstance) {
 }
 
 func (j *JobInstance) trigger(overrideJobId string, triggerConfig *sync.Map, executeDatetime *time.Time) (jobId string, fn func()) {
-	ctx := context.Background()
-	runner := newJobRunner(ctx, j, triggerConfig, executeDatetime)
-	runner.triggerType = constants.TRIGGER_TYPE_SCHEDULE
-	if overrideJobId != "" {
-		runner.id = overrideJobId
-	}
-	if executeDatetime != nil {
-		runner.triggerType = constants.TRIGGER_TYPE_EXTERNAL
-	}
+	return overrideJobId, func() {
+		ctx := context.Background()
+		runner := newJobRunner(ctx, j, triggerConfig, executeDatetime)
+		runner.triggerType = constants.TRIGGER_TYPE_SCHEDULE
+		if overrideJobId != "" {
+			runner.id = overrideJobId
+		}
+		if executeDatetime != nil {
+			runner.triggerType = constants.TRIGGER_TYPE_EXTERNAL
+		}
 
-	ctx = context.WithValue(ctx, constants.JOB_RUNNER_INSTANCE_KEY, runner.getRunnerInterface())
-	runner.ctx = ctx
+		ctx = context.WithValue(ctx, constants.JOB_RUNNER_INSTANCE_KEY, runner.getRunnerInterface())
+		runner.ctx = ctx
 
-	runner.logjob = &models.Job{
-		SchedulerName: j.scheduler.name,
-		JobId:         runner.id,
-		Status:        runner.status,
-		StartDateTime: &runner.executeDatetime,
-		EndDatetime:   nil,
-		CreatedAt:     time.Now(),
-		UpdatedAt:     time.Now(),
-	}
-	if err := j.scheduler.GetAdapter().GetRepository().UpsertJob(ctx, runner.logjob); err != nil {
-		fmt.Println("fail to upsert job with status WAITING:", err.Error())
-	}
-	return runner.id, func() {
+		runner.logjob = &models.Job{
+			SchedulerName: j.scheduler.name,
+			JobId:         runner.id,
+			Status:        runner.status,
+			StartDateTime: &runner.executeDatetime,
+			EndDatetime:   nil,
+			CreatedAt:     time.Now(),
+			UpdatedAt:     time.Now(),
+		}
+
 		j.process(runner)
 	}
 }
 
 func (j *JobInstance) process(runner *jobRunner) {
-	if runner.triggerType == constants.TRIGGER_TYPE_SCHEDULE {
+	switch runner.triggerType {
+	case constants.TRIGGER_TYPE_SCHEDULE:
 		trigger := &models.Trigger{
 			SchedulerName:   j.scheduler.name,
 			ExecuteDatetime: time.Now(),
@@ -102,7 +102,13 @@ func (j *JobInstance) process(runner *jobRunner) {
 			CreatedAt:       time.Now(),
 			UpdatedAt:       time.Now(),
 		}
-		j.scheduler.dbAdapter.GetRepository().UpsertTrigger(context.Background(), trigger)
+		if err := j.scheduler.dbAdapter.GetRepository().CreateTriggerByJobScheduler(context.Background(), trigger); err != nil {
+			if err.Error() == constants.ERROR_ALREADY_EXISTS {
+				return
+			}
+			log.Errorf("failed to create trigger by job scheduler with error: %s", err.Error())
+			return
+		}
 	}
 
 	runner.setStartProcess()

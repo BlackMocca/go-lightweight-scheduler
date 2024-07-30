@@ -1,0 +1,5 @@
+CREATE INDEX idx_execute_datetime ON triggers (execute_datetime);
+CREATE INDEX idx_status ON jobs (status);
+
+CREATE UNIQUE INDEX idx_unique_trigger_schedule ON triggers (scheduler_name, execute_datetime, type)
+WHERE type = 'SCHEDULE';

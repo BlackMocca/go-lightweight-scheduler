@@ -33,6 +33,7 @@ func getWebInstance(adapterConnection connection.DatabaseAdapterConnection) (*ec
 	e.Use(echoMiddL.Logger())
 	e.Use(echoMiddL.Recover())
 	e.Use(echoMiddL.AddTrailingSlash())
+	e.Use(echoMiddL.CORS())
 	e.Use(middL.InitContext)
 	e.Use(middL.InputForm)
 

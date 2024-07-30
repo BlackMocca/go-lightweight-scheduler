@@ -1,0 +1,24 @@
+{
+    "type": "object",
+    "properties": {
+        "name": {
+            "type": "string",
+            "pattern": "^[A-Za-z0-9\\-\\_]+$"
+        },
+        "config_key": {
+            "type": "string"
+        },
+        "config_value": {
+            "type": [
+                "number",
+                "string",
+                "boolean"
+            ]
+        }
+    },
+    "required": [
+        "name",
+        "config_key",
+        "config_value"
+    ]
+}

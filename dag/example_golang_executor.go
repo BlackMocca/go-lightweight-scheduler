@@ -16,7 +16,7 @@ func startDagExampleGolang() {
 		fmt.Println("on error")
 		val := ctx.Value(constants.JOB_RUNNER_INSTANCE_KEY)
 		jobRunner := val.(scheduler.JobRunner)
-		fmt.Println("task", jobRunner.GetTask().GetName(), "with exception", jobRunner.GetException().(scheduler.Exception).Error())
+		fmt.Println("task", jobRunner.GetTask().GetName(), "with exception", jobRunner.GetException().Error())
 		return nil
 	}
 	config.OnSuccess = func(ctx context.Context) error {

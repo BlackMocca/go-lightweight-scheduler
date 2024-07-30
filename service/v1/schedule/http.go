@@ -7,4 +7,9 @@ type HttpHandler interface {
 	GetOneSchedule(echo.Context) error
 	Trigger(echo.Context) error
 	GetOneJobById(echo.Context) error
+	GetListJob(echo.Context) error
+	GetListJobTask(c echo.Context) error
+	GetListJobFuture(c echo.Context) error
+	UnActivatedTrigger(c echo.Context) error
+	DeleteJobFuture(c echo.Context) error
 }

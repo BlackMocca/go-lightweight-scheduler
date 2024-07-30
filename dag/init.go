@@ -17,8 +17,8 @@ func call() {
 	if constants.ENV_ENABLED_DAG_EXAMPLE {
 		startDagExampleGolang()
 		startDagExampleTaskBash()
-		startDagExampleTaskBranch()
 		startDagExampleWorkWithoutCronjob()
+		startDagExampleTaskBranch()
 	}
 	//startdagExampleNewbie()
 }

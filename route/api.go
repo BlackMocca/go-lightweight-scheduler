@@ -35,4 +35,10 @@ func (r Route) RegisterSchedule(handler schedule.HttpHandler, validation _schedu
 	r.auth.GET("/v1/scheduler/:name", handler.GetOneSchedule)
 	r.auth.GET("/v1/job/:job_id", handler.GetOneJobById)
 	r.auth.POST("/v1/scheduler/triggers", handler.Trigger, validation.ValidateTrigger)
+
+	r.auth.GET("/v1/jobs", handler.GetListJob)
+	r.auth.GET("/v1/job/tasks", handler.GetListJobTask)
+	r.auth.GET("/v1/job/futures", handler.GetListJobFuture)
+	r.auth.PUT("/v1/scheduler/trigger/unactive", handler.UnActivatedTrigger, validation.ValidateUnActivatedTrigger)
+	r.auth.DELETE("/v1/job/futures/:job_id", handler.DeleteJobFuture)
 }

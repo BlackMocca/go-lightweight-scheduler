@@ -52,7 +52,7 @@ func NewLoggerWithFile(pathfile string) *Log {
 func openFile(pathfile string) *os.File {
 	f, err := os.OpenFile(pathfile, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 	if err != nil {
-		logrus.Error("error opening file: %v", err.Error())
+		logrus.Error("error opening file: ", err.Error())
 		return nil
 	}
 	return f

@@ -10,9 +10,34 @@ services:
     env_file: .env
     networks: 
       - default
-    platform: linux/amd64
     ports:
       - 3000:3000
+    volumes:
+      - .:/go/src/github.com/Blackmocca/go-lightweight-scheduler
+
+  scheduler-app-2:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-development
+    container_name: scheduler-app-2
+    env_file: .env
+    networks: 
+      - default
+    ports:
+      - 3002:3000
+    volumes:
+      - .:/go/src/github.com/Blackmocca/go-lightweight-scheduler
+
+  scheduler-app-3:
+    build:
+      context: ./
+      dockerfile: ./Dockerfile-development
+    container_name: scheduler-app-3
+    env_file: .env
+    networks: 
+      - default
+    ports:
+      - 3003:3000
     volumes:
       - .:/go/src/github.com/Blackmocca/go-lightweight-scheduler
 
@@ -36,7 +61,7 @@ services:
     networks: 
       - default
     ports:
-      - 8081:8080
+      - 8088:8080
 
 networks:
   default:

@@ -21,7 +21,7 @@ type JobRunner interface {
 	GetSchedulerName() string
 	GetStatus() constants.JobStatus
 	GetTask() task.Execution
-	GetException() error
+	GetException() Exception
 	GetExecuteDatetime() time.Time
 	GetArguments() *sync.Map     // static data when job run
 	GetParameter() *sync.Map     // pass data through pipeline
@@ -139,7 +139,7 @@ func (jr jobRunner) GetTask() task.Execution {
 	return jr.tasks[jr.currentTaskIndex]
 }
 
-func (jr jobRunner) GetException() error {
+func (jr jobRunner) GetException() Exception {
 	return jr.exception
 }
 
@@ -171,7 +171,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 	defer func() {
 		if r := recover(); r != nil {
 			if reflect.TypeOf(r).Kind() == reflect.String {
-				jr.exception = newRunnerException(errors.New(r.(string)), true)
+				jr.exception = newRunnerException(errors.New(reflect.ValueOf(r).String()), true)
 				jr.setStatus(constants.JOB_STATUS_FAILED)
 			} else {
 				jr.exception = newRunnerException(r.(error), true)
@@ -226,7 +226,7 @@ func (jr *jobRunner) run(tasks []task.Execution) {
 		taskResult.endDatetime = &ti
 		if err != nil {
 			jr.exceptionOnTaskName = taskExecution.GetName()
-			jr.exception = newRunnerException(err, false)
+			jr.exception = newRunnerException(err, true)
 			taskResult.status = constants.JOB_STATUS_FAILED
 			jr.taskResults[index] = taskResult
 			// jr.logger.Error(err, map[string]interface{}{"job_id": jr.id, "task_name": taskExecution.GetName(), "scheduler_name": jr.schedulerName, "task_start": taskResult.startDate.Format(constants.TIME_FORMAT_RFC339), "task_end": taskResult.endDatetime.Format(constants.TIME_FORMAT_RFC339), "task_status": taskResult.status})

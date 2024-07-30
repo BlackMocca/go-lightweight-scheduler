@@ -11,6 +11,7 @@ import (
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/logger"
 	"github.com/Blackmocca/go-lightweight-scheduler/internal/models"
 	"github.com/go-co-op/gocron"
+	"github.com/labstack/gommon/log"
 )
 
 type SchedulerInstance struct {
@@ -43,6 +44,7 @@ func (s *SchedulerInstance) MarshalJSON() ([]byte, error) {
 		Name        string                   `json:"name"`
 		Cronjob     string                   `json:"cronjob_expression"`
 		IsRunning   bool                     `json:"is_running"`
+		Description string                   `json:"description"`
 		Arguments   map[string]interface{}   `json:"arguments"`
 		LastRun     string                   `json:"last_run"`
 		NextRun     string                   `json:"next_run"`
@@ -51,11 +53,12 @@ func (s *SchedulerInstance) MarshalJSON() ([]byte, error) {
 		Tasks       []map[string]interface{} `json:"tasks"`
 	}
 	var sh = ptr{
-		Name:      s.name,
-		Cronjob:   s.cronExpression,
-		IsRunning: s.Scheduler.IsRunning(),
-		Config:    s.config,
-		Tasks:     make([]map[string]interface{}, 0),
+		Name:        s.name,
+		Cronjob:     s.cronExpression,
+		IsRunning:   s.Scheduler.IsRunning(),
+		Config:      s.config,
+		Description: s.description,
+		Tasks:       make([]map[string]interface{}, 0),
 	}
 	if s.jobInstance != nil {
 		sh.Arguments = s.jobInstance.arguments
@@ -138,19 +141,28 @@ func (s *SchedulerInstance) Run(trigger *models.Trigger) string {
 		go func(trigger models.Trigger, duration time.Duration, call func()) {
 			time.Sleep(duration)
 			trigger.IsTrigger = true
-			checkTrigger, _ := s.dbAdapter.GetRepository().GetOneTriggerByJobId(context.Background(), trigger.JobId)
-			if checkTrigger != nil && checkTrigger.IsActive {
+			checkTrigger, err := s.dbAdapter.GetRepository().ExecuteFutureJob(context.Background(), &trigger)
+			if err != nil {
+				log.Error(err)
+				return
+			}
+			if checkTrigger != nil && checkTrigger.JobId != "" && checkTrigger.IsActive {
 				fn()
 			}
-			s.dbAdapter.GetRepository().UpsertTrigger(context.Background(), &trigger)
 		}(*trigger, duration, fn)
 		return jobId
 	}
 	/* run ทันที */
-	jobId, fn := s.jobInstance.trigger(trigger.JobId, trigger.GetConfigMutex(), nil)
-	go fn()
+	jobId, fn := s.jobInstance.trigger(trigger.JobId, trigger.GetConfigMutex(), &trigger.ExecuteDatetime)
 	trigger.JobId = jobId
 	trigger.IsTrigger = true
-	go s.dbAdapter.GetRepository().UpsertTrigger(context.Background(), trigger)
+	checkTrigger, err := s.dbAdapter.GetRepository().ExecuteFutureJob(context.Background(), trigger)
+	if err != nil {
+		log.Error(err)
+		return ""
+	}
+	if checkTrigger != nil && checkTrigger.JobId != "" && checkTrigger.IsActive {
+		fn()
+	}
 	return jobId
 }
